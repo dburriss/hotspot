@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "fake-cli": {
+      "version": "5.20.3",
+      "commands": [
+        "fake"
+      ]
+    },
+    "paket": {
+      "version": "5.249.2",
+      "commands": [
+        "paket"
+      ]
+    },
+    "fornax": {
+      "version": "0.13.1",
+      "commands": [
+        "fornax"
+      ]
+    },
+    "hotspot": {
+      "version": "0.0.1",
+      "commands": [
+        "hotspot"
+      ]
+    }
+  }
+}
