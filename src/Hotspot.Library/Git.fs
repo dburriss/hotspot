@@ -1,19 +1,42 @@
-namespace Hotspot
+namespace Hotspot.Git
 
-module Git =
-        
-    open System
+open System
+type Commit = | Commit of string
+type Author = | Author of string
+type Lines = string list
+
+type Log = {
+    Commit : Commit
+    Author : Author
+    Date : DateTimeOffset
+}
+module GitCommand =
+    
     open System.Diagnostics
+    
+    let runGitCommand repository command =
+        //printfn "RUNNING: 'git %s'" command 
+        let info = ProcessStartInfo()
+        info.WorkingDirectory <- repository//must be full path not using ~/
+        info.FileName <- "/usr/local/bin/git" //TODO: fix as this will only work on a *nix with this being the install dir - a config, if none then cycle through known locations
+        info.Arguments <- command
+        info.UseShellExecute <- false
+        info.RedirectStandardOutput <- true
+        info.RedirectStandardError <- true
+        let p = Process.Start(info)
 
-    type Commit = | Commit of string
-    type Author = | Author of string
-    type Lines = string list
-
-    type Log = {
-        Commit : Commit
-        Author : Author
-        Date : DateTimeOffset
-    }
+        let output = p.StandardOutput.ReadToEnd()
+        let err = p.StandardError.ReadToEnd()
+        p.WaitForExit()
+        if String.IsNullOrEmpty(err) then
+            if String.IsNullOrWhiteSpace(output) then
+                None |> Ok
+            else output |> Some |> Ok
+        else Error (sprintf "ERROR running 'git %s' %s %s" command Environment.NewLine err)
+        
+    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" --follow %s" file
+    let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" hash
+    
 
     let private splitByNewline s = 
         //printfn "SPLITTING LINE: %A" s
@@ -41,29 +64,7 @@ module Git =
         let data = []
         lines |> List.fold folder data
 
-    let runGitCommand repository command =
-        //printfn "RUNNING: 'git %s'" command 
-        let info = ProcessStartInfo()
-        info.WorkingDirectory <- repository//must be full path not using ~/
-        info.FileName <- "/usr/local/bin/git" //TODO: fix as this will only work on a *nix with this being the install dir
-        info.Arguments <- command
-        info.UseShellExecute <- false
-        info.RedirectStandardOutput <- true
-        info.RedirectStandardError <- true
-        let p = Process.Start(info)
-
-        let output = p.StandardOutput.ReadToEnd()
-        let err = p.StandardError.ReadToEnd()
-        p.WaitForExit()
-        if String.IsNullOrEmpty(err) then
-            if String.IsNullOrWhiteSpace(output) then
-                None |> Ok
-            else output |> Some |> Ok
-        else Error (sprintf "ERROR running 'git %s' %s %s" command Environment.NewLine err)
-
-    let private gitLogOfFile repository file =
-        let cmd = sprintf "log --format=format:\"%%h,%%ae,%%aI\" --follow %s" file
-        runGitCommand repository cmd
+    let private gitLogOfFile repository file = file |> logOfFileCmd |> runGitCommand repository
 
     let private gitLogByHash repository h =
         //Console.WriteLine("gitLogByHash")
@@ -100,5 +101,5 @@ module Git =
     let repositoryRange repository =
         let first = repository |> firstLog
         let last = repository |> lastLog
-        Result.map2 (fun f l -> (f |> Option.get |> fun x -> x.Date, l |> Option.get |> fun x -> x.Date)) first last
+        Hotspot.Result.map2 (fun f l -> (f |> Option.get |> fun x -> x.Date, l |> Option.get |> fun x -> x.Date)) first last
 

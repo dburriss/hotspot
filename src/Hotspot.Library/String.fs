@@ -1,4 +1,4 @@
-﻿namespace Hotspot
+﻿namespace System
 
 module String =
     open System

@@ -2,6 +2,7 @@
 
 open System
 open Hotspot
+open Hotspot.Git
 
 // DATA TYPES
 type Repository = {
@@ -77,7 +78,7 @@ let private combine (path, file) = IO.Path.Combine (path, file)
 
 /// Get basic repository info
 let descRepository repoPath =
-    let (start, finish) = Git.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
+    let (start, finish) = GitCommand.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
     {
         Path = repoPath
         CreatedAt = start
@@ -87,7 +88,7 @@ let descRepository repoPath =
 let private gitFileRawData (repository : Repository) file : RawData option =
     let filePath = combine(repository.Path, file)
     let locStats = Loc.getStats filePath
-    let history = Git.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
+    let history = GitCommand.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
     match history with
     | [] -> None
     | hs ->
@@ -159,13 +160,16 @@ let distinctAuthors (history : Git.Log list) = history |> List.distinctBy (fun h
 
 let recommendations (data : RecommendationData) =
     [
+        let nrChanges = data.History |> List.length
+        let nrAuthors = data.History |> distinctAuthors |> List.length
+        
         if(data.LoC > 400) then 
-            if(data.RelativePriority >= 50 && data.History |> List.length > 5) then 
+            if(data.RelativePriority >= 50 && nrChanges > 5) then 
                 yield sprintf "PRIORITY: MEDIUM | This file is large at %i lines of code and changes often. It is strongly suggested you break it up to avoid conflicting changes." data.LoC
             else 
                 yield sprintf "PRIORITY: LOW | You may want to break this file up into smaller files as it is %i lines of code." data.LoC
         
-        if(data.LoC > 100 && data.History |> distinctAuthors |> List.length = 1) then 
+        if(data.LoC > 100 && nrAuthors = 1) then 
             if data.RelativePriority > 50 && data.RelativePriority < 80 then
                 yield "PRIORITY: MEDIUM | Bus factor is 1 on a significant file. Make sure covered by descriptive tests & try get spread knowledge across the team."
             if data.RelativePriority >= 80 then
@@ -205,7 +209,7 @@ let makeRecommendationsWith analysisRecommendation (analyzedRepository : Analyze
 
 let printRecommendations report =
     
-    printfn "Repository: %s" report.Path
+    printfn "REPOSITORY: %s" report.Path
     report.Recommendations
     |> Map.toArray
     |> Array.map (fun (file, r) ->
@@ -225,9 +229,9 @@ let printRecommendations report =
     |> Array.iter (fun x ->
         if(x.Comments.Length > 0) then
             let dtformat (dt : DateTimeOffset) = dt.ToLocalTime().ToString("yyyy-MM-dd")
-            printfn "%s" x.File
-            printfn "       Priority : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
-            x.Comments |> List.iter (printfn "   %s")
+            printfn "===> %s" x.File
+            printfn "           Priority : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
+            x.Comments |> List.iter (printfn "      %s")
             
     )
     report
