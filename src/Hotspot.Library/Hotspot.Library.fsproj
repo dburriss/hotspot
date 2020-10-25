@@ -16,6 +16,7 @@
         <Compile Include="GitLog.fs" />
         <Compile Include="Repository.fs" />
         <Compile Include="Measure.fs" />
+        <Compile Include="Analyse.fs" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

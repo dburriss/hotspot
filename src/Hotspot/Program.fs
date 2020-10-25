@@ -7,19 +7,6 @@ open Hotspot.Helpers
 
 // DATA TYPES
 
-type Analysis = {
-    Path : string
-    Measurement : Measurement
-    PriorityScore : int64
-}
-
-type AnalyzedRepository = {
-    Path : string
-    Project : ProjectFolder
-    CreatedAt : DateTimeOffset
-    LastUpdatedAt : DateTimeOffset
-    Analysis : Analysis list
-}
 
 type RecommendationData = {
     RelativePriority: int
@@ -44,35 +31,9 @@ type RecommendationReport = {
 
 // WORKFLOWS
 type GatherRepositoryData = ProjectFolder -> MeasuredRepository -> MeasuredRepository
-type AnalyzeRepository = MeasuredRepository -> AnalyzedRepository
+
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
-let calcPriorityFromHistory (repository : MeasuredRepository) (data : Measurement) =
-    let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
-    let multiplier coeff = coeff * 1L//(data.LoC |> Option.get |> int64) // We want to do on cyclomatic complexity rather than LoC
-    let touchScores = 
-        data.History 
-        |> Option.map (List.map (fun log -> log.Date |> calcCoeff))
-        |> Option.map (List.sumBy multiplier)
-    touchScores
-
-let analyzeData calcPriority (repository : MeasuredRepository) (data : Measurement) =
-    {
-        Path = data.Path
-        Measurement = data
-        PriorityScore  = calcPriority repository data |> Option.get // TODO: 25/10/2020 dburriss@xebia.com | Make better life choices
-    }
-
-/// Analyze the data
-let performAnalysis analyzeData (repository : MeasuredRepository) =
-    let analyze = analyzeData repository
-    {
-        Path = repository.Path
-        Project = repository.Project
-        CreatedAt = repository.CreatedAt
-        LastUpdatedAt = repository.LastUpdatedAt
-        Analysis = repository.Measurements |> List.map analyze
-    }
 
 let distinctAuthors (history : Git.Log list) = history |> List.distinctBy (fun h -> h.Author)
 
@@ -166,7 +127,7 @@ let main argv =
     
     let repoData = repo |> Measure.gatherRepositoryRawData (Measure.fileRawData inExtensionIncludeList) projFolder
 
-    let analyze = performAnalysis (analyzeData calcPriorityFromHistory)
+    let analyze = Analyse.performAnalysis (Analyse.analyzeData Analyse.calcPriorityFromHistory)
     let recommend analyzedRepo =
         // TODO: this can be done more efficiently
         let scores = analyzedRepo.Analysis |> List.map (fun x -> x.PriorityScore) 
