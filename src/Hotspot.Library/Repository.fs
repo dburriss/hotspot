@@ -21,9 +21,6 @@ type Repository =
 /// Create a repository instance from a directory
 type ReadRepository = string -> Repository
 
-/// A specific folder in a repository that you would like to measure
-type ProjectFolder = string
-
 module Repository =
     open Hotspot.Git
     let path = function | JustCode r -> r.Path | GitRepository r -> r.Path

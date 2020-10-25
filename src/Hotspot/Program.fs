@@ -6,23 +6,6 @@ open Hotspot.Git
 open Hotspot.Helpers
 
 // DATA TYPES
-type Measurement = {
-    Path : string
-    CreatedAt : DateTimeOffset
-    LastTouchedAt : DateTimeOffset
-    History : Git.Log list
-    LoC : int
-}
-
-type ProjectFolder = string
-
-type RawRepositoryData = {
-    Path : string
-    Project : ProjectFolder
-    CreatedAt : DateTimeOffset
-    LastUpdatedAt : DateTimeOffset
-    Measurements : Measurement list
-}
 
 type Analysis = {
     Path : string
@@ -60,8 +43,8 @@ type RecommendationReport = {
 }
 
 // WORKFLOWS
-type GatherRepositoryData = ProjectFolder -> RawRepositoryData -> RawRepositoryData
-type AnalyzeRepository = RawRepositoryData -> AnalyzedRepository
+type GatherRepositoryData = ProjectFolder -> MeasuredRepository -> MeasuredRepository
+type AnalyzeRepository = MeasuredRepository -> AnalyzedRepository
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
 let private gitFileRawData (repository : RepositoryData) file : Measurement option =
@@ -102,7 +85,7 @@ let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository
         Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
     }
 
-let calcPriority (repository : RawRepositoryData) (data : Measurement) =
+let calcPriority (repository : MeasuredRepository) (data : Measurement) =
     let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
 
     let touchScores = 
@@ -111,7 +94,7 @@ let calcPriority (repository : RawRepositoryData) (data : Measurement) =
         |> List.sumBy (fun coeff ->  coeff * (data.LoC |> int64)) // We want to do on cyclomatic complexity rather than LoC
     touchScores
 
-let analyzeData calcPriority (repository : RawRepositoryData) (data : Measurement) =
+let analyzeData calcPriority (repository : MeasuredRepository) (data : Measurement) =
     {
         Path = data.Path
         Measurement = data
@@ -119,7 +102,7 @@ let analyzeData calcPriority (repository : RawRepositoryData) (data : Measuremen
     }
 
 /// Analyze the data
-let performAnalysis analyzeData (repository : RawRepositoryData) =
+let performAnalysis analyzeData (repository : MeasuredRepository) =
     let analyze = analyzeData repository
     {
         Path = repository.Path
