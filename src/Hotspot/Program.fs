@@ -47,48 +47,6 @@ type GatherRepositoryData = ProjectFolder -> MeasuredRepository -> MeasuredRepos
 type AnalyzeRepository = MeasuredRepository -> AnalyzedRepository
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
-let private gitFileRawData (repository : RepositoryData) file : Measurement option =
-    let filePath = FileSystem.combine(repository.Path, file)
-    let locStats = Loc.getStats filePath
-    let history = GitLog.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
-    match history with
-    | [] -> None
-    | hs ->
-        let (fileCreated,lastTouchedAt) = (hs |> List.head |> fun x -> x.Date, history |> List.last |> fun x -> x.Date) 
-        {
-            Path = filePath
-            CreatedAt = fileCreated
-            LastTouchedAt = lastTouchedAt
-            History = history |> Some
-            LoC = locStats.LoC |> Some
-            CyclomaticComplexity = None
-            InheritanceDepth = None
-            Coupling = None
-        } |> Some
-
-let fileRawData inExtensionIncludeList (repository : Repository) =
-    match repository with
-    | GitRepository repo ->
-        repo.Path
-        |> FileSystem.mapFiles (fun (path, file) -> 
-            let filePath = FileSystem.combine(path, file)
-
-            if(filePath |> inExtensionIncludeList) then
-                gitFileRawData repo filePath
-            else None)
-    | JustCode repo -> failwithf "Path %s is a non VCS code repository" repo.Path
-
-/// Get all files with history and LoC
-let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository) =    
-    {
-        Path = repository |> Repository.path
-        Project = projectFolder
-        CreatedAt = repository |> Repository.createdAt
-        LastUpdatedAt = repository |> Repository.lastUpdatedAt
-        Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
-    }
-
-
 let calcPriorityFromHistory (repository : MeasuredRepository) (data : Measurement) =
     let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
     let multiplier coeff = coeff * 1L//(data.LoC |> Option.get |> int64) // We want to do on cyclomatic complexity rather than LoC
@@ -206,7 +164,7 @@ let main argv =
     let inExtensionIncludeList filePath = includeList |> List.contains (filePath |> FileSystem.ext)
     let repo =  repoDir |> Repository.init
     
-    let repoData = repo |> gatherRepositoryRawData (fileRawData inExtensionIncludeList) projFolder
+    let repoData = repo |> Measure.gatherRepositoryRawData (Measure.fileRawData inExtensionIncludeList) projFolder
 
     let analyze = performAnalysis (analyzeData calcPriorityFromHistory)
     let recommend analyzedRepo =
