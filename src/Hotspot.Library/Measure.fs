@@ -2,13 +2,13 @@ namespace Hotspot
 
 open System
 
-
+/// A record representing a file with metrics
 type Measurement = {
     Path : string
     CreatedAt : DateTimeOffset
     LastTouchedAt : DateTimeOffset
-    History : (Git.Log list)
-    LoC : int
+    History : (Git.Log list) option
+    LoC : int option
     CyclomaticComplexity : int option
     InheritanceDepth : int option
     Coupling : int option

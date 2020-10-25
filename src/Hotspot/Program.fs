@@ -59,8 +59,8 @@ let private gitFileRawData (repository : RepositoryData) file : Measurement opti
             Path = filePath
             CreatedAt = fileCreated
             LastTouchedAt = lastTouchedAt
-            History = history
-            LoC = locStats.LoC
+            History = history |> Some
+            LoC = locStats.LoC |> Some
             CyclomaticComplexity = None
             InheritanceDepth = None
             Coupling = None
@@ -88,20 +88,21 @@ let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository
         Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
     }
 
-let calcPriority (repository : MeasuredRepository) (data : Measurement) =
-    let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
 
+let calcPriorityFromHistory (repository : MeasuredRepository) (data : Measurement) =
+    let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
+    let multiplier coeff = coeff * 1L//(data.LoC |> Option.get |> int64) // We want to do on cyclomatic complexity rather than LoC
     let touchScores = 
         data.History 
-        |> List.map (fun log -> log.Date |> calcCoeff)
-        |> List.sumBy (fun coeff ->  coeff * (data.LoC |> int64)) // We want to do on cyclomatic complexity rather than LoC
+        |> Option.map (List.map (fun log -> log.Date |> calcCoeff))
+        |> Option.map (List.sumBy multiplier)
     touchScores
 
 let analyzeData calcPriority (repository : MeasuredRepository) (data : Measurement) =
     {
         Path = data.Path
         Measurement = data
-        PriorityScore  = calcPriority repository data
+        PriorityScore  = calcPriority repository data |> Option.get // TODO: 25/10/2020 dburriss@xebia.com | Make better life choices
     }
 
 /// Analyze the data
@@ -145,8 +146,8 @@ let analysisRecommendation recommendations shiftPriority (analysis : Analysis) =
     let data = {
             RelativePriority = shiftPriority analysis.PriorityScore
             //Complexity  = analysis.Raw.Metrics.Complexity
-            LoC = analysis.Measurement.LoC
-            History = analysis.Measurement.History
+            LoC = analysis.Measurement.LoC |> Option.get // TODO: 25/10/2020 dburriss@xebia.com | Be smarter
+            History = analysis.Measurement.History |> Option.get
         }
     let recommendation = {
             Path = analysis.Path
@@ -207,7 +208,7 @@ let main argv =
     
     let repoData = repo |> gatherRepositoryRawData (fileRawData inExtensionIncludeList) projFolder
 
-    let analyze = performAnalysis (analyzeData calcPriority)
+    let analyze = performAnalysis (analyzeData calcPriorityFromHistory)
     let recommend analyzedRepo =
         // TODO: this can be done more efficiently
         let scores = analyzedRepo.Analysis |> List.map (fun x -> x.PriorityScore) 
