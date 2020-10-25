@@ -10,7 +10,7 @@ NUGET
       FsCheck (>= 2.14)
     FsCheck (2.14)
       FSharp.Core (>= 4.2.3)
-    FSharp.Core (4.7.2)
+    FSharp.Core (5.0)
     Mono.Cecil (0.11.3)
 
 GROUP Build
@@ -137,7 +137,7 @@ NUGET
     FSharp.Control.Reactive (4.4.2)
       FSharp.Core (>= 4.7.2)
       System.Reactive (>= 4.4.1)
-    FSharp.Core (4.7.2)
+    FSharp.Core (5.0)
     Microsoft.Build (16.7)
     Microsoft.Build.Framework (16.7)
       System.Security.Permissions (>= 4.7)
@@ -422,7 +422,7 @@ NUGET
       System.Reflection.Metadata (>= 1.6)
       System.Reflection.TypeExtensions (>= 4.3)
       System.Runtime.Loader (>= 4.0)
-    FSharp.Core (4.7.2)
+    FSharp.Core (5.0)
     FSharp.Formatting (4.1)
       FSharp.Compiler.Service (>= 35.0)
     Microsoft.NETCore.Platforms (3.1.3)
