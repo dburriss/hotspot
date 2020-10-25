@@ -6,7 +6,7 @@ open Hotspot.Git
 open Hotspot.Helpers
 
 // DATA TYPES
-type RawData = {
+type Measurement = {
     Path : string
     CreatedAt : DateTimeOffset
     LastTouchedAt : DateTimeOffset
@@ -21,12 +21,12 @@ type RawRepositoryData = {
     Project : ProjectFolder
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
-    Data : RawData list
+    Measurements : Measurement list
 }
 
 type Analysis = {
     Path : string
-    Raw : RawData
+    Measurement : Measurement
     PriorityScore : int64
 }
 
@@ -64,7 +64,7 @@ type GatherRepositoryData = ProjectFolder -> RawRepositoryData -> RawRepositoryD
 type AnalyzeRepository = RawRepositoryData -> AnalyzedRepository
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
-let private gitFileRawData (repository : RepositoryData) file : RawData option =
+let private gitFileRawData (repository : RepositoryData) file : Measurement option =
     let filePath = FileSystem.combine(repository.Path, file)
     let locStats = Loc.getStats filePath
     let history = GitLog.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
@@ -99,10 +99,10 @@ let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository
         Project = projectFolder
         CreatedAt = repository |> Repository.createdAt
         LastUpdatedAt = repository |> Repository.lastUpdatedAt
-        Data = (gatherRawData repository) |> Seq.toList |> List.choose id
+        Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
     }
 
-let calcPriority (repository : RawRepositoryData) (data : RawData) =
+let calcPriority (repository : RawRepositoryData) (data : Measurement) =
     let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
 
     let touchScores = 
@@ -111,10 +111,10 @@ let calcPriority (repository : RawRepositoryData) (data : RawData) =
         |> List.sumBy (fun coeff ->  coeff * (data.LoC |> int64)) // We want to do on cyclomatic complexity rather than LoC
     touchScores
 
-let analyzeData calcPriority (repository : RawRepositoryData) (data : RawData) =
+let analyzeData calcPriority (repository : RawRepositoryData) (data : Measurement) =
     {
         Path = data.Path
-        Raw = data
+        Measurement = data
         PriorityScore  = calcPriority repository data
     }
 
@@ -126,7 +126,7 @@ let performAnalysis analyzeData (repository : RawRepositoryData) =
         Project = repository.Project
         CreatedAt = repository.CreatedAt
         LastUpdatedAt = repository.LastUpdatedAt
-        Analysis = repository.Data |> List.map analyze
+        Analysis = repository.Measurements |> List.map analyze
     }
 
 let distinctAuthors (history : Git.Log list) = history |> List.distinctBy (fun h -> h.Author)
@@ -159,15 +159,15 @@ let analysisRecommendation recommendations shiftPriority (analysis : Analysis) =
     let data = {
             RelativePriority = shiftPriority analysis.PriorityScore
             //Complexity  = analysis.Raw.Metrics.Complexity
-            LoC = analysis.Raw.LoC
-            History = analysis.Raw.History
+            LoC = analysis.Measurement.LoC
+            History = analysis.Measurement.History
         }
     let recommendation = {
             Path = analysis.Path
             Comments = recommendations data
             RecommendationData = data
         }
-    (analysis.Raw.Path, recommendation)    
+    (analysis.Measurement.Path, recommendation)    
 
 let makeRecommendationsWith analysisRecommendation (analyzedRepository : AnalyzedRepository) =
     //let (min,max) = analyzedRepository.Analysis |> List.map (fun a -> a.PriorityScore) |> fun xs -> (xs |> List.min, xs |> List.max)
