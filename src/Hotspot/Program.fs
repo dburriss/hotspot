@@ -61,6 +61,9 @@ let private gitFileRawData (repository : RepositoryData) file : Measurement opti
             LastTouchedAt = lastTouchedAt
             History = history
             LoC = locStats.LoC
+            CyclomaticComplexity = None
+            InheritanceDepth = None
+            Coupling = None
         } |> Some
 
 let fileRawData inExtensionIncludeList (repository : Repository) =
