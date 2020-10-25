@@ -1,4 +1,4 @@
-namespace Hotspot
+namespace Hotspot.Helpers
 
 module Result =
     let map2 mapping r1 r2 =

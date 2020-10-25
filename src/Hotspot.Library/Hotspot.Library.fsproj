@@ -9,9 +9,12 @@
     <ItemGroup>
         <Compile Include="String.fs" />
         <Compile Include="Result.fs" />
+        <Compile Include="FileSystem.fs" />
         <Compile Include="Stats.fs" />
         <Compile Include="Loc.fs" />
         <Compile Include="GitCommand.fs" />
+        <Compile Include="GitLog.fs" />
+        <Compile Include="Library.fs" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

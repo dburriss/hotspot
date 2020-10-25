@@ -3,13 +3,9 @@
 open System
 open Hotspot
 open Hotspot.Git
+open Hotspot.Helpers
 
 // DATA TYPES
-type Repository = {
-    Path : string
-    CreatedAt : DateTimeOffset
-    LastUpdatedAt : DateTimeOffset
-}
 
 type RawData = {
     Path : string
@@ -21,7 +17,7 @@ type RawData = {
 
 type ProjectFolder = string
 
-type RepositoryData = {
+type RawRepositoryData = {
     Path : string
     Project : ProjectFolder
     CreatedAt : DateTimeOffset
@@ -65,30 +61,26 @@ type RecommendationReport = {
 }
 
 // WORKFLOWS
-type GatherRepositoryData = ProjectFolder -> Repository -> RepositoryData
-type AnalyzeRepository = RepositoryData -> AnalyzedRepository
+type GatherRepositoryData = ProjectFolder -> RawRepositoryData -> RawRepositoryData
+type AnalyzeRepository = RawRepositoryData -> AnalyzedRepository
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
-
-// HELPERS
-
-let private getFiles path = IO.Directory.GetFiles(path)
-let private getDirs path = IO.Directory.GetDirectories(path)
-let private combine (path, file) = IO.Path.Combine (path, file)
-
 /// Get basic repository info
-let descRepository repoPath =
-    let (start, finish) = GitCommand.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
+let private descRepository repoPath =
+    let (start, finish) = GitLog.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
     {
         Path = repoPath
         CreatedAt = start
         LastUpdatedAt = finish
     }
+    
+let readRepository : ReadRepository = fun path ->
+    path |> descRepository |> GitRepository
 
-let private gitFileRawData (repository : Repository) file : RawData option =
-    let filePath = combine(repository.Path, file)
+let private gitFileRawData (repository : RepositoryData) file : RawData option =
+    let filePath = FileSystem.combine(repository.Path, file)
     let locStats = Loc.getStats filePath
-    let history = GitCommand.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
+    let history = GitLog.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
     match history with
     | [] -> None
     | hs ->
@@ -101,35 +93,29 @@ let private gitFileRawData (repository : Repository) file : RawData option =
             LoC = locStats.LoC
         } |> Some
 
-let rec private mapFiles f path =
-    let dirs = path |> getDirs
-    let files = path |> getFiles |> Seq.map (fun file -> (path, file))
-    seq {
-        yield! (files |> Seq.map f)
-        yield! (Seq.collect (mapFiles f) dirs)
-    }
+let fileRawData inExtensionIncludeList (repository : Repository) =
+    match repository with
+    | GitRepository repo ->
+        repo.Path
+        |> FileSystem.mapFiles (fun (path, file) -> 
+            let filePath = FileSystem.combine(path, file)
 
-let gitRawData extensionList (repository : Repository) =
-    let inExtensionIncludeList filePath = extensionList |> List.contains (IO.FileInfo(filePath).Extension)
-    repository.Path
-    |> mapFiles (fun (path, file) -> 
-        let filePath = combine(path, file)
-
-        if(filePath |> inExtensionIncludeList) then
-            gitFileRawData repository filePath
-        else None)
+            if(filePath |> inExtensionIncludeList) then
+                gitFileRawData repo filePath
+            else None)
+    | JustCode repo -> failwithf "Path %s is a non VCS code repository" repo.Path
 
 /// Get all files with history and LoC
 let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository) =    
     {
-        Path = repository.Path
+        Path = repository |> Repository.path
         Project = projectFolder
-        CreatedAt = repository.CreatedAt
-        LastUpdatedAt = repository.LastUpdatedAt
+        CreatedAt = repository |> Repository.createdAt
+        LastUpdatedAt = repository |> Repository.lastUpdatedAt
         Data = (gatherRawData repository) |> Seq.toList |> List.choose id
     }
 
-let calcPriority (repository : RepositoryData) (data : RawData) =
+let calcPriority (repository : RawRepositoryData) (data : RawData) =
     let calcCoeff = Stats.calculateCoeffiecient repository.CreatedAt repository.LastUpdatedAt
 
     let touchScores = 
@@ -138,7 +124,7 @@ let calcPriority (repository : RepositoryData) (data : RawData) =
         |> List.sumBy (fun coeff ->  coeff * (data.LoC |> int64)) // We want to do on cyclomatic complexity rather than LoC
     touchScores
 
-let analyzeData calcPriority (repository : RepositoryData) (data : RawData) =
+let analyzeData calcPriority (repository : RawRepositoryData) (data : RawData) =
     {
         Path = data.Path
         Raw = data
@@ -146,7 +132,7 @@ let analyzeData calcPriority (repository : RepositoryData) (data : RawData) =
     }
 
 /// Analyze the data
-let performAnalysis analyzeData (repository : RepositoryData) =
+let performAnalysis analyzeData (repository : RawRepositoryData) =
     let analyze = analyzeData repository
     {
         Path = repository.Path
@@ -232,10 +218,8 @@ let printRecommendations report =
             printfn "===> %s" x.File
             printfn "           Priority : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
             x.Comments |> List.iter (printfn "      %s")
-            
     )
     report
-
 
 [<EntryPoint>]
 let main argv =
@@ -244,9 +228,11 @@ let main argv =
     printfn "Running against %s" currentPath
     let testRepo = argv |> Array.tryItem 0 |> Option.defaultValue currentPath
     let projFolder : ProjectFolder = argv |> Array.tryItem 1 |> Option.defaultValue "./"
-    let includeList = argv |> Array.tryItem 2 |> Option.defaultValue ".cs,.fs,.js" |> String.split [|","|] |> Array.toList
-    let repo =  testRepo |> descRepository 
-    let repoData = repo |> gatherRepositoryRawData (gitRawData includeList) projFolder
+    let includeList = argv |> Array.tryItem 2 |> Option.defaultValue "cs,fs,js" |> String.split [|","|] |> Array.toList
+    let inExtensionIncludeList filePath = includeList |> List.contains (filePath |> FileSystem.ext)
+    let repo =  testRepo |> readRepository
+    
+    let repoData = repo |> gatherRepositoryRawData (fileRawData inExtensionIncludeList) projFolder
 
     let analyze = performAnalysis (analyzeData calcPriority)
     let recommend analyzedRepo =
