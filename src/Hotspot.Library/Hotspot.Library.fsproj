@@ -14,7 +14,7 @@
         <Compile Include="Loc.fs" />
         <Compile Include="GitCommand.fs" />
         <Compile Include="GitLog.fs" />
-        <Compile Include="Library.fs" />
+        <Compile Include="Repository.fs" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -6,7 +6,6 @@ open Hotspot.Git
 open Hotspot.Helpers
 
 // DATA TYPES
-
 type RawData = {
     Path : string
     CreatedAt : DateTimeOffset
@@ -64,18 +63,6 @@ type RecommendationReport = {
 type GatherRepositoryData = ProjectFolder -> RawRepositoryData -> RawRepositoryData
 type AnalyzeRepository = RawRepositoryData -> AnalyzedRepository
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
-
-/// Get basic repository info
-let private descRepository repoPath =
-    let (start, finish) = GitLog.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
-    {
-        Path = repoPath
-        CreatedAt = start
-        LastUpdatedAt = finish
-    }
-    
-let readRepository : ReadRepository = fun path ->
-    path |> descRepository |> GitRepository
 
 let private gitFileRawData (repository : RepositoryData) file : RawData option =
     let filePath = FileSystem.combine(repository.Path, file)
@@ -226,11 +213,11 @@ let main argv =
     // execute
     let currentPath = Environment.CurrentDirectory
     printfn "Running against %s" currentPath
-    let testRepo = argv |> Array.tryItem 0 |> Option.defaultValue currentPath
+    let repoDir = argv |> Array.tryItem 0 |> Option.defaultValue currentPath
     let projFolder : ProjectFolder = argv |> Array.tryItem 1 |> Option.defaultValue "./"
     let includeList = argv |> Array.tryItem 2 |> Option.defaultValue "cs,fs,js" |> String.split [|","|] |> Array.toList
     let inExtensionIncludeList filePath = includeList |> List.contains (filePath |> FileSystem.ext)
-    let repo =  testRepo |> readRepository
+    let repo =  repoDir |> Repository.init
     
     let repoData = repo |> gatherRepositoryRawData (fileRawData inExtensionIncludeList) projFolder
 
