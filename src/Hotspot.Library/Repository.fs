@@ -48,7 +48,7 @@ module Repository =
     let path = function | JustCode r -> r.Path | GitRepository r -> r.Path
     let createdAt = function | JustCode r -> r.CreatedAt | GitRepository r -> r.CreatedAt
     let lastUpdatedAt = function | JustCode r -> r.LastUpdatedAt | GitRepository r -> r.LastUpdatedAt
-
+    let data = function | GitRepository data -> data | JustCode data -> data
     /// Create a Repository instance. 
     let init (deps : RepositoryConfig) : ReadRepository = fun path ->
         match (deps.IsGitRepository path) with

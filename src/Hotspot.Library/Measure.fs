@@ -25,12 +25,15 @@ type MeasuredRepository = {
     Measurements : Measurement list
 }
 
-module Measure =
-    
+type IgnoreFile = string -> bool
+type MeasureDependencies = {
+    MeasureRepositoryFiles : IgnoreFile -> Repository -> (Measurement option) seq
+}
+
+module MeasureDependencies =
     open Hotspot.Helpers
-    open Hotspot.Git
-    
-    let private gitFileRawData (repository : RepositoryData) file : Measurement option =
+    open Hotspot.Git    
+    let private measureFileWithGitHistory (repository : RepositoryData) file : Measurement option =
         let filePath = FileSystem.combine(repository.Path, file)
         let locStats = Loc.getStats filePath
         let history = GitParse.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
@@ -49,26 +52,30 @@ module Measure =
                 Coupling = None
             } |> Some
 
-    let fileRawData inExtensionIncludeList (repository : Repository) =
+    let measureFiles ignoreFile (repository : Repository) =
         match repository with
         | GitRepository repo ->
             repo.Path
             |> FileSystem.mapFiles (fun (path, file) -> 
                 let filePath = FileSystem.combine(path, file)
 
-                if(filePath |> inExtensionIncludeList) then
-                    gitFileRawData repo filePath
-                else None)
+                if(filePath |> ignoreFile) then None
+                else measureFileWithGitHistory repo filePath)
         | JustCode repo -> failwithf "Path %s is a non VCS code repository. Currently not supported." repo.Path
 
+    let Live = {
+        MeasureRepositoryFiles = measureFiles
+    }
+
+module Measure =
+    
     /// Get all files with history and LoC
-    let gatherRepositoryRawData gatherRawData projectFolder (repository : Repository) =    
+    let measure (deps : MeasureDependencies) projectFolder ignoreFile (repository : Repository) =
+        // TODO: 26/10/2020 dburriss@xebia.com | Move file mapping and ignore to repository module
         {
             Path = repository |> Repository.path
             Project = projectFolder
             CreatedAt = repository |> Repository.createdAt
             LastUpdatedAt = repository |> Repository.lastUpdatedAt
-            Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
+            Measurements = (deps.MeasureRepositoryFiles ignoreFile repository) |> Seq.toList |> List.choose id
         }
-    
-    let measure projectFolder inExtensionIncludeList = gatherRepositoryRawData (fileRawData inExtensionIncludeList) projectFolder
