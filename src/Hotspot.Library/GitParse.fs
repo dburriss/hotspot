@@ -13,7 +13,13 @@ type Log = {
     Date : DateTimeOffset
 }
 
-module GitLog =
+module GitParse =
+    
+    let isRepository path =
+        GitCommand.isInGitRepo
+        |> GitCommand.run path
+        |> Result.map (fun (s : string option) -> s |> Option.map Convert.ToBoolean |> Option.defaultValue false)
+        
     let private arrToLog splitLine = 
         match splitLine with
         | [|sId;sEmail;sDate|] -> { Commit = (sId |> Commit); Author = (sEmail |> Author); Date = DateTimeOffset.Parse(sDate)}
@@ -34,7 +40,7 @@ module GitLog =
         let data = []
         lines |> List.fold folder data
 
-    let private gitLogOfFile repository file = file |> GitCommand.logOfFileCmd |> GitCommand.runGitCommand repository
+    let private gitLogOfFile repository file = file |> GitCommand.logOfFileCmd |> GitCommand.run repository
         
     let fileHistory repository file =
         match (gitLogOfFile repository file) with
@@ -50,12 +56,12 @@ module GitLog =
         
     let firstLog repository =
         //Console.WriteLine("firstLog")
-        let run = GitCommand.runGitCommand repository
+        let run = GitCommand.run repository
         let cmdGetFirstCommit = "rev-list --max-parents=0 HEAD"
         run cmdGetFirstCommit
         |> Result.map ( splitByNewline >> Array.tryLast)
         |> Result.bind (function 
-                        | Some hash -> hash |> GitCommand.logOfHashCmd |> GitCommand.runGitCommand repository
+                        | Some hash -> hash |> GitCommand.logOfHashCmd |> GitCommand.run repository
                         | None -> Ok None)
         |> Result.map (function
                         | Some line -> line |> lineToLog
@@ -63,7 +69,7 @@ module GitLog =
 
     let lastLog repository =
         //Console.WriteLine("lastLog")
-        let run = GitCommand.runGitCommand repository
+        let run = GitCommand.run repository
         let cmd = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\""
         run cmd
         //|> fun x -> printfn "DEBUG: %A" x ; x
@@ -73,3 +79,4 @@ module GitLog =
         let first = repository |> firstLog
         let last = repository |> lastLog
         Result.map2 (fun f l -> (f |> Option.get |> fun x -> x.Date, l |> Option.get |> fun x -> x.Date)) first last
+    

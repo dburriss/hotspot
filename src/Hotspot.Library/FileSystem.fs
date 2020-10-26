@@ -15,3 +15,6 @@ module FileSystem =
             yield! (files |> Seq.map f)
             yield! (Seq.collect (mapFiles f) dirs)
         }
+    
+    // for globbing check
+    // https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing?view=dotnet-plat-ext-3.1

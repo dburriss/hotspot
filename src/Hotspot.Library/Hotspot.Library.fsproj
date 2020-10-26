@@ -13,7 +13,7 @@
         <Compile Include="Stats.fs" />
         <Compile Include="Loc.fs" />
         <Compile Include="GitCommand.fs" />
-        <Compile Include="GitLog.fs" />
+        <Compile Include="GitParse.fs" />
         <Compile Include="Repository.fs" />
         <Compile Include="Measure.fs" />
         <Compile Include="Analyse.fs" />

@@ -33,7 +33,7 @@ module Measure =
     let private gitFileRawData (repository : RepositoryData) file : Measurement option =
         let filePath = FileSystem.combine(repository.Path, file)
         let locStats = Loc.getStats filePath
-        let history = GitLog.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
+        let history = GitParse.fileHistory repository.Path filePath |> function | Ok x -> x |> List.choose id | Error e -> failwith e
         match history with
         | [] -> None
         | hs ->

@@ -28,7 +28,7 @@ module Repository =
     let lastUpdatedAt = function | JustCode r -> r.LastUpdatedAt | GitRepository r -> r.LastUpdatedAt
     
     let private gitRepository repoPath =
-        let (start, finish) = GitLog.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
+        let (start, finish) = GitParse.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
         {
             Path = repoPath
             CreatedAt = start
@@ -38,5 +38,8 @@ module Repository =
     /// Create a Repository instance. 
     let init : ReadRepository = fun path ->
         // TODO: 25/10/2020 dburriss@xebia.com | Determine if a git repository or not
-        path |> gitRepository |> GitRepository
+        match (GitParse.isRepository path) with
+        | Ok false -> failwithf "%s is not a git repository. Only git currently supported." path
+        | Ok true -> path |> gitRepository |> GitRepository
+        | Error ex -> failwith ex
         

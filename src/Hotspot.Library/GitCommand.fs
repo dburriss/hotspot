@@ -5,7 +5,7 @@ module GitCommand =
     open System.Diagnostics
     open System
     
-    let runGitCommand repository command =
+    let run repository command =
         //printfn "RUNNING: 'git %s'" command 
         let info = ProcessStartInfo()
         info.WorkingDirectory <- repository//must be full path not using ~/
@@ -27,10 +27,5 @@ module GitCommand =
         
     let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" --follow %s" file
     let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" hash
+    let isInGitRepo = "rev-parse --is-inside-work-tree" // true/false
     
-    let private gitLogByHash repository h =
-        //Console.WriteLine("gitLogByHash")
-        let cmd = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" h
-        runGitCommand repository cmd
-
-
