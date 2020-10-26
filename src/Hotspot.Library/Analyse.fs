@@ -45,3 +45,5 @@ module Analyse =
             LastUpdatedAt = repository.LastUpdatedAt
             Analysis = repository.Measurements |> List.map analyze
         }
+
+    let analyse = performAnalysis (analyzeData calcPriorityFromHistory)

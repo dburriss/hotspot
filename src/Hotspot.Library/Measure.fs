@@ -70,3 +70,5 @@ module Measure =
             LastUpdatedAt = repository |> Repository.lastUpdatedAt
             Measurements = (gatherRawData repository) |> Seq.toList |> List.choose id
         }
+    
+    let measure projectFolder inExtensionIncludeList = gatherRepositoryRawData (fileRawData inExtensionIncludeList) projectFolder

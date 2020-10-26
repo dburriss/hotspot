@@ -79,6 +79,14 @@ module Recommend =
             Recommendations = analyzedRepository.Analysis |> List.map analysisRecommendation |> Map.ofList
         }
 
+    let recommend analyzedRepo =
+        // TODO: this can be done more efficiently
+        let scores = analyzedRepo.Analysis |> List.map (fun x -> x.PriorityScore) 
+        let min = scores |> List.min
+        let max = scores |> List.max
+
+        makeRecommendationsWith (analysisRecommendation recommendations (Stats.shiftTo100L min max >> int)) analyzedRepo
+        
     let printRecommendations report =
         
         printfn "REPOSITORY: %s" report.Path
@@ -92,6 +100,7 @@ module Recommend =
                 LoC = r.RecommendationData.LoC
                 Priority = r.RecommendationData.RelativePriority
                 Comments = r.Comments
+                Changes = r.RecommendationData.History |> List.length
                 Authours = r.RecommendationData.History |> distinctAuthors |> List.length
                 CreatedAt = first.Date
                 CreatedBy = first.Author |> authour
@@ -102,7 +111,7 @@ module Recommend =
             if(x.Comments.Length > 0) then
                 let dtformat (dt : DateTimeOffset) = dt.ToLocalTime().ToString("yyyy-MM-dd")
                 printfn "===> %s" x.File
-                printfn "           Priority : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
+                printfn "           Priority : %i   Changes : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.Changes x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
                 x.Comments |> List.iter (printfn "      %s")
         )
         report

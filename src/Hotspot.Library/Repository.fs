@@ -1,6 +1,7 @@
 namespace Hotspot
 
 open System
+open Hotspot.Git
 
 //=====================================
 // Repository
@@ -19,27 +20,39 @@ type Repository =
     | GitRepository of RepositoryData
 
 /// Create a repository instance from a directory
-type ReadRepository = string -> Repository
+type ReadRepository = string -> Result<Repository, string>
+
+type RepositoryConfig = {
+    IsGitRepository : string -> Result<bool,string>
+    GitRepository : ReadRepository
+    NoVcsRepository : ReadRepository
+}
+
+module RepositoryDependencies =
+    let private gitRepository repoPath =
+        GitParse.repositoryRange repoPath
+        |> Result.map (fun (start, finish) -> 
+        {
+            Path = repoPath
+            CreatedAt = start
+            LastUpdatedAt = finish
+        } |> GitRepository)
+    let Live = {
+        IsGitRepository = GitParse.isRepository
+        GitRepository = gitRepository
+        NoVcsRepository = fun p -> Error (sprintf "%s is not under version control. Non version controlled repositories not supported." p)
+    }
 
 module Repository =
     open Hotspot.Git
     let path = function | JustCode r -> r.Path | GitRepository r -> r.Path
     let createdAt = function | JustCode r -> r.CreatedAt | GitRepository r -> r.CreatedAt
     let lastUpdatedAt = function | JustCode r -> r.LastUpdatedAt | GitRepository r -> r.LastUpdatedAt
-    
-    let private gitRepository repoPath =
-        let (start, finish) = GitParse.repositoryRange repoPath |> function | Ok x -> x | Error e -> failwith e
-        {
-            Path = repoPath
-            CreatedAt = start
-            LastUpdatedAt = finish
-        }
 
     /// Create a Repository instance. 
-    let init : ReadRepository = fun path ->
-        // TODO: 25/10/2020 dburriss@xebia.com | Determine if a git repository or not
-        match (GitParse.isRepository path) with
+    let init (deps : RepositoryConfig) : ReadRepository = fun path ->
+        match (deps.IsGitRepository path) with
         | Ok false -> failwithf "%s is not a git repository. Only git currently supported." path
-        | Ok true -> path |> gitRepository |> GitRepository
+        | Ok true -> path |> deps.GitRepository
         | Error ex -> failwith ex
         
