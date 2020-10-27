@@ -11,10 +11,10 @@ let main argv =
     let projFolder : ProjectFolder = argv |> Array.tryItem 1 |> Option.defaultValue "./"
     let includeList = argv |> Array.tryItem 2 |> Option.defaultValue "cs,fs,js" |> String.split [|","|] |> Array.toList
     let ignoreFile filePath = includeList |> List.contains (filePath |> FileSystem.ext) |> not
-    let repo =  repoDir |> Repository.init RepositoryDependencies.Live
+    let repo =  repoDir |> Repository.init RepositoryDependencies.Live ignoreFile
     
     repo
-    |> Result.map (Measure.measure MeasureDependencies.Live projFolder ignoreFile)
+    |> Result.map (Measure.measure RepositoryDependencies.Live projFolder)
     |> Result.map Analyse.analyse 
     |> Result.map Recommend.recommend
     |> Result.map Recommend.printRecommendations

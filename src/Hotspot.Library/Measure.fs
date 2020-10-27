@@ -25,14 +25,11 @@ type MeasuredRepository = {
     Measurements : Measurement list
 }
 
-type IgnoreFile = string -> bool
-type MeasureDependencies = {
-    MeasureRepositoryFiles : IgnoreFile -> Repository -> (Measurement option) seq
-}
-
-module MeasureDependencies =
+module Measure =
+    
     open Hotspot.Helpers
-    open Hotspot.Git    
+    open Hotspot.Git
+    
     let private measureFileWithGitHistory (repository : RepositoryData) file : Measurement option =
         let filePath = FileSystem.combine(repository.Path, file)
         let locStats = Loc.getStats filePath
@@ -52,30 +49,22 @@ module MeasureDependencies =
                 Coupling = None
             } |> Some
 
-    let measureFiles ignoreFile (repository : Repository) =
+    let measureFile (repository : Repository) file =
         match repository with
-        | GitRepository repo ->
-            repo.Path
-            |> FileSystem.mapFiles (fun (path, file) -> 
-                let filePath = FileSystem.combine(path, file)
-
-                if(filePath |> ignoreFile) then None
-                else measureFileWithGitHistory repo filePath)
+        | GitRepository repo -> measureFileWithGitHistory repo file
         | JustCode repo -> failwithf "Path %s is a non VCS code repository. Currently not supported." repo.Path
-
-    let Live = {
-        MeasureRepositoryFiles = measureFiles
-    }
-
-module Measure =
     
-    /// Get all files with history and LoC
-    let measure (deps : MeasureDependencies) projectFolder ignoreFile (repository : Repository) =
-        // TODO: 26/10/2020 dburriss@xebia.com | Move file mapping and ignore to repository module
+    let measureFiles deps repository =
+        let f = measureFile repository
+        Repository.forEach deps f repository 
+        |> Seq.toList |> List.map snd |> List.choose id
+        
+    /// Get all files with Measurements
+    let measure (deps : RepositoryDependencies<Measurement>) projectFolder (repository : Repository) =
         {
             Path = repository |> Repository.path
             Project = projectFolder
             CreatedAt = repository |> Repository.createdAt
             LastUpdatedAt = repository |> Repository.lastUpdatedAt
-            Measurements = (deps.MeasureRepositoryFiles ignoreFile repository) |> Seq.toList |> List.choose id
+            Measurements = measureFiles deps repository
         }
