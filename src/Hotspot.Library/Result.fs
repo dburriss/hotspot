@@ -16,6 +16,13 @@ module Result =
         
     let iter (f : _ -> unit) result =
         Result.map f result |> ignore
+    
+    let apply fR xR =
+        match fR, xR with
+        | Ok f, Ok x -> Ok (f x)
+        | Error err1, Ok _ -> Error err1
+        | Ok _, Error err2 -> Error err2
+        | Error err1, Error _ -> Error err1
         
 [<AutoOpen>]
 module ResultComputationExpression =

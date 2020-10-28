@@ -11,13 +11,23 @@ let main argv =
     let projFolder : ProjectFolder = argv |> Array.tryItem 1 |> Option.defaultValue "./"
     let includeList = argv |> Array.tryItem 2 |> Option.defaultValue "cs,fs,js" |> String.split [|","|] |> Array.toList
     let ignoreFile filePath = includeList |> List.contains (filePath |> FileSystem.ext) |> not
-    let repo =  repoDir |> Repository.init RepositoryDependencies.Live ignoreFile
     
-    repo
-    |> Result.map (Measure.measure RepositoryDependencies.Live projFolder)
-    |> Result.map Analyse.analyse 
-    |> Result.map Recommend.recommend
-    |> Result.map Recommend.printRecommendations
-    |> ignore
+    let terminate = function
+        | Error err ->
+            do eprintfn "%s" err
+            -1
+        | Ok _ -> 0
+    
+    let repository =  repoDir |> Repository.init RepositoryDependencies.Live ignoreFile
 
-    0 // return an integer exit code
+    let printRecommendations =
+        Measure.measure RepositoryDependencies.Live projFolder
+        >> Analyse.analyse 
+        >> Recommend.recommend
+        >> Recommend.printRecommendations
+
+    // Use case (default): Use LoC & print to console
+    repository
+    |> Result.map printRecommendations
+    |> terminate
+    
