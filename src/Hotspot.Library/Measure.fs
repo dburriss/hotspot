@@ -5,8 +5,8 @@ open System
 /// A record representing a file with metrics
 type Measurement = {
     Path : string
-    CreatedAt : DateTimeOffset
-    LastTouchedAt : DateTimeOffset
+    CreatedAt : DateTimeOffset option
+    LastTouchedAt : DateTimeOffset option
     History : (Git.Log list) option
     LoC : int option
     CyclomaticComplexity : int option
@@ -25,6 +25,28 @@ type MeasuredRepository = {
     Measurements : Measurement list
 }
 
+module Measurement =
+    
+    let private get v1 v2 selector =
+        let x1 = v1 |> selector
+        let x2 = v2 |> selector
+        match (x1, x2) with
+        | Some _, _ -> x1
+        | None, Some _ -> x2
+        | None, None -> None
+
+    let zip (m1 : Measurement) (m2 : Measurement) : Measurement =
+        {
+            Path = m1.Path
+            CreatedAt = get m1 m2 (fun x -> x.CreatedAt)
+            LastTouchedAt = get m1 m2 (fun x -> x.LastTouchedAt)
+            History = get m1 m2 (fun x -> x.History)
+            LoC = get m1 m2 (fun x -> x.LoC)
+            CyclomaticComplexity = get m1 m2 (fun x -> x.CyclomaticComplexity)
+            InheritanceDepth = get m1 m2 (fun x -> x.InheritanceDepth)
+            Coupling = get m1 m2 (fun x -> x.Coupling)
+        }
+
 module Measure =
     
     open Hotspot.Helpers
@@ -37,7 +59,7 @@ module Measure =
         match history with
         | [] -> None
         | hs ->
-            let (fileCreated,lastTouchedAt) = (hs |> List.head |> fun x -> x.Date, history |> List.last |> fun x -> x.Date) 
+            let (fileCreated,lastTouchedAt) = (hs |> List.tryHead |> Option.map (fun x -> x.Date), history |> List.tryLast |> Option.map (fun x -> x.Date)) 
             {
                 Path = filePath
                 CreatedAt = fileCreated
@@ -58,7 +80,7 @@ module Measure =
         let f = measureFile repository
         Repository.forEach deps f repository 
         |> Seq.toList |> List.map snd |> List.choose id
-        
+       
     /// Get all files with Measurements
     let measure (deps : RepositoryDependencies<Measurement>) projectFolder (repository : Repository) =
         {
