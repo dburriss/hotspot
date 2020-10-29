@@ -5,25 +5,22 @@
 
 This executes the default command which is **recommend**. It is the equivalent of executing:
 
-`hotspot recommend --out console`
+`hotspot recommend --output console`
 
-Note: `console` is also the default if no `--out` is provided.
+Note: `console` is also the default if no `--output` is provided.
 *)
 
 open System
 open Hotspot
 open Hotspot.Helpers
-open McMaster.Extensions.CommandLineUtils
+open Spectre.Cli
 
 [<EntryPoint>]
 let main argv =
     //---------------------------------------------------------------------------------------------------------------
     // Console helpers
     //---------------------------------------------------------------------------------------------------------------
-    let enableHelpI (app : CommandLineApplication) = do app.HelpOption() |> ignore
-    let optionValue (opt : CommandOption) =
-        if opt.HasValue() then Some (opt.Value())
-        else None
+    
     //---------------------------------------------------------------------------------------------------------------
     // Usecases
     //---------------------------------------------------------------------------------------------------------------
@@ -38,34 +35,21 @@ let main argv =
     //---------------------------------------------------------------------------------------------------------------
     // Console setup
     //---------------------------------------------------------------------------------------------------------------
-    use app = new CommandLineApplication()
-    app |> enableHelpI
-
+    let app = CommandApp()
     
-    let currentPath = Environment.CurrentDirectory
-    
-    let defaultIncludeList = argv |> Array.tryItem 2 |> Option.defaultValue "cs,fs,js" |> String.split [|","|] |> Array.toList
+    let defaultIncludeList = ["cs";"fs";"js"]
     let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
     
     //---------------------------------------------------------------------------------------------------------------
     // Options
     //---------------------------------------------------------------------------------------------------------------
     
-//    let optionOutOption = app.Option("-o|--out <OUTPUT>",
-//                                     "The output for the hotspot command. Options are: console, *.json, *.xml, *.csv",
-//                                     CommandOptionType.SingleValue)
-    let repositoryFolderOption = app.Option("-r|--repository-dir <REPOSITORY_FOLDER>",
-                                         "The repository root of a VCS code repository. DEFAULT: Same dir hotspot is executed in",
-                                         CommandOptionType.SingleValue)
-    let projectFolderOption = app.Option("-p|--project-dir <PROJECT_FOLDER>",
-                                         "If provided will narrow the search to specified directory. DEFAULT: Same as REPOSITORY_FOLDER",
-                                         CommandOptionType.SingleValue)
-    
+
     //---------------------------------------------------------------------------------------------------------------
     // Top arg values
     //---------------------------------------------------------------------------------------------------------------
-    let repoDir = repositoryFolderOption |> optionValue |> Option.defaultValue currentPath
-    let projectFolder = projectFolderOption |> optionValue |> Option.defaultValue "./"
+//    let repoDir = repositoryFolderOption |> optionValue |> Option.defaultValue currentPath
+//    let projectFolder = projectFolderOption |> optionValue |> Option.defaultValue "./"
     
     let terminate = function
         | Error err ->
@@ -76,19 +60,25 @@ let main argv =
     //---------------------------------------------------------------------------------------------------------------
     // Commands setup
     //---------------------------------------------------------------------------------------------------------------
-    let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile    
-    let cmd = app.Command("recommend",
-                fun (cmd : CommandLineApplication) ->
-                    cmd.OnExecute(fun i -> repository |> Result.map (printRecommendations projectFolder) |> terminate))
+//    let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile    
+    let cmd = app.Configure(
+                fun config ->
+                    // RECOMMEND
+                    //let recommendf = fun ctx settings -> 0
+                    let recommendf = fun (ctx : CommandContext) (settings : HotspotSetting) ->
+                        let repoDir = settings.RepositoryFolder
+                        let targetFolder = settings.TargetFolder
+                        printfn "REPOSITORY: %s" repoDir
+                        printfn "TARGET: %s" targetFolder
+                        let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile
+                        repository |> Result.map (printRecommendations targetFolder) |> terminate
+                    config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
+        )
     
 
-    app.OnExecute(fun () ->
-        app.AddSubcommand(cmd)
-    )
-    
     //---------------------------------------------------------------------------------------------------------------
     // Execute
     //---------------------------------------------------------------------------------------------------------------
-    app.Execute(argv)
+    app.Run(argv)
     
     
