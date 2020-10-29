@@ -4,7 +4,8 @@ module Loc =
     
     open System
     open System.IO
-
+    open Hotspot.Helpers
+    
     type LineStats = {
         Ext : string
         Lines : int
@@ -32,7 +33,7 @@ module Loc =
     let getStats filePath =
         let lineTypes = File.ReadLines(filePath) |> Seq.map (inspectLine) |> Seq.toList
         {
-            Ext = FileInfo(filePath).Extension
+            Ext = FileSystem.ext filePath
             Lines = lineTypes |> List.length
             LoC = lineTypes |> List.filter (fun x -> x = Code) |> List.length
             CommentLines = lineTypes |> List.filter (fun x -> x = Comment) |> List.length

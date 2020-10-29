@@ -1,13 +1,18 @@
 namespace Hotspot.Helpers
 
+
+
 module FileSystem =
     open System
+    open System.IO
+    
     let getFiles path = IO.Directory.GetFiles(path)
     let getDirs path = IO.Directory.GetDirectories(path)
     let combine (path, file) = IO.Path.Combine (path, file)
     let ext filePath = IO.FileInfo(filePath).Extension |> String.replace "." ""
     let relative (relativeTo : string) (path : string) = IO.Path.GetRelativePath(relativeTo, path)
-
+    let loadText filePath = File.ReadAllText filePath
+    
     let rec mapFiles<'a> (f : string -> 'a) path =
         let dirs = path |> getDirs
         let files = path |> getFiles |> Seq.map (fun file -> combine(path, file))

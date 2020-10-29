@@ -47,7 +47,8 @@ module RepositoryDependencies =
         
     let mapFiles<'a> (f : string -> 'a option) repository =
         let data = match repository with | GitRepository data -> data | JustCode data -> data
-        let map = fun filePath -> 
+        let map = fun filePath ->
+            //printfn "MAP FILE: %s" filePath
             if(filePath |> data.IgnoreFile) then filePath, None
             else filePath, (f filePath)
         FileSystem.mapFiles map data.Path

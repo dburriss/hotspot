@@ -8,6 +8,7 @@ nuget Expecto
 nuget FsCheck 2.14.0
 nuget Expecto.FsCheck
 nuget Spectre.Cli
+nuget System.Text.Json
 
 group Docs
   source https://api.nuget.org/v3/index.json

@@ -7,8 +7,12 @@ type HotspotSetting () =
     
     [<CommandOption("-r|--repository-folder <REPOSITORY>")>]
     member val RepositoryFolder = System.Environment.CurrentDirectory with get, set
+    
     [<CommandOption("-t|--target-folder <TARGET>")>]
     member val TargetFolder = "./" with get, set
+    
+    [<CommandOption("--scc-file <SCC>")>]
+    member val SccFile = "" with get, set
     
 //type RecommendCommand () =
 //    inherit Command<HotspotSetting>()

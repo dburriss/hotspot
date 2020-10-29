@@ -21,13 +21,23 @@ let main argv =
     // Console helpers
     //---------------------------------------------------------------------------------------------------------------
     
+    let loadSccFile filePath =
+        FileSystem.loadText filePath
+    
     //---------------------------------------------------------------------------------------------------------------
     // Usecases
     //---------------------------------------------------------------------------------------------------------------
-
+    
     // Use case (default): Use LoC & print to console
-    let printRecommendations projectFolder =
-        Measure.measure RepositoryDependencies.Live projectFolder
+    let sccMetrics root ignoreFile sccFile =
+        sccFile
+        |> loadSccFile
+        |> SCC.parse
+        |> SCC.toMetricsLookup root ignoreFile
+        
+    
+    let printRecommendations metricsF projectFolder =
+        Measure.measure RepositoryDependencies.Live metricsF projectFolder
         >> Analyse.analyse 
         >> Recommend.recommend
         >> Recommend.printRecommendations
@@ -37,7 +47,7 @@ let main argv =
     //---------------------------------------------------------------------------------------------------------------
     let app = CommandApp()
     
-    let defaultIncludeList = ["cs";"fs";"js"]
+    let defaultIncludeList = ["cs";"fs";]
     let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
     
     //---------------------------------------------------------------------------------------------------------------
@@ -61,19 +71,26 @@ let main argv =
     // Commands setup
     //---------------------------------------------------------------------------------------------------------------
 //    let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile    
-    let cmd = app.Configure(
-                fun config ->
-                    // RECOMMEND
-                    //let recommendf = fun ctx settings -> 0
-                    let recommendf = fun (ctx : CommandContext) (settings : HotspotSetting) ->
-                        let repoDir = settings.RepositoryFolder
-                        let targetFolder = settings.TargetFolder
-                        printfn "REPOSITORY: %s" repoDir
-                        printfn "TARGET: %s" targetFolder
-                        let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile
-                        repository |> Result.map (printRecommendations targetFolder) |> terminate
-                    config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
-        )
+    app.Configure(
+        fun config ->
+            // RECOMMEND
+            //let recommendf = fun ctx settings -> 0
+            let recommendf = fun (ctx : CommandContext) (settings : HotspotSetting) ->
+                let repoDir = settings.RepositoryFolder
+                let targetFolder = settings.TargetFolder
+                
+                printfn "REPOSITORY: %s" repoDir
+                printfn "TARGET: %s" targetFolder
+                let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile
+                let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
+                if(useScc) then
+                    printfn "Using scc data..."
+                    repository |> Result.map (printRecommendations (sccMetrics repoDir defaultIgnoreFile settings.SccFile) targetFolder) |> terminate
+                else
+                    printfn "Using my metrics..."
+                    repository |> Result.map (printRecommendations Measure.myMetrics targetFolder) |> terminate
+            config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
+    )
     
 
     //---------------------------------------------------------------------------------------------------------------
