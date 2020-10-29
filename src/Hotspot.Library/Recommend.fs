@@ -37,19 +37,19 @@ module Recommend =
             
             if(data.LoC > 400) then 
                 if(data.RelativePriority >= 50 && nrChanges > 5) then 
-                    yield sprintf "PRIORITY: MEDIUM | This file is large at %i lines of code and changes often. It is strongly suggested you break it up to avoid conflicting changes." data.LoC
+                    yield sprintf "SEVERITY: MEDIUM | This file is large at %i lines of code and changes often. It is strongly suggested you break it up to avoid conflicting changes." data.LoC
                 else 
-                    yield sprintf "PRIORITY: LOW | You may want to break this file up into smaller files as it is %i lines of code." data.LoC
+                    yield sprintf "SEVERITY: LOW | You may want to break this file up into smaller files as it is %i lines of code." data.LoC
             
             if(data.LoC > 100 && nrAuthors = 1) then 
                 if data.RelativePriority > 50 && data.RelativePriority < 80 then
-                    yield "PRIORITY: MEDIUM | Bus factor is 1 on a significant file. Make sure covered by descriptive tests & try get spread knowledge across the team."
+                    yield "SEVERITY: MEDIUM | Bus factor is 1 on a significant file. Make sure covered by descriptive tests & try get spread knowledge across the team."
                 if data.RelativePriority >= 80 then
-                    yield "PRIORITY: HIGH | Bus factor is 1 on a VERY significant file. Make sure covered by descriptive tests & try pair up working on this file to prioritize knowledge transfer."
+                    yield "SEVERITY: HIGH | Bus factor is 1 on a VERY significant file. Make sure covered by descriptive tests & try pair up working on this file to prioritize knowledge transfer."
 
             else
                 if data.RelativePriority >= 80 then
-                    yield "PRIORITY: MEDIUM | This file seems to be significant based on complexity and changes. Make sure covered by descriptive tests & try get spread knowledge across the team."
+                    yield "SEVERITY: MEDIUM | This file seems to be significant based on complexity and changes. Make sure covered by descriptive tests & try get spread knowledge across the team."
             // if(data.Complexity >= 10 && data.RelativePriority >= 20) then 
             //     yield sprintf "PRIORITY: %i/100 | Due to cyclomatic complexity of %i and recency of changes, this should be simplified. See: http://codinghelmet.com/articles/reduce-cyclomatic-complexity-switchable-factory-methods" (data.RelativePriority) (data.Complexity)
         ]
@@ -89,7 +89,6 @@ module Recommend =
         
     let printRecommendations report =
         
-        printfn "REPOSITORY: %s" report.Path
         report.Recommendations
         |> Map.toArray
         |> Array.map (fun (file, r) ->
@@ -109,9 +108,20 @@ module Recommend =
         |> Array.iter (fun x ->
             if(x.Comments.Length > 0) then
                 let dtformat (dt : DateTimeOffset) = dt.ToLocalTime().ToString("yyyy-MM-dd")
+                let printIfSome t = function Some x -> (printf t x) | None -> ()
+                let printIfNotZero t i = if i > 0 then printf t i else ()
+                let changeAuthour dt auth = match (dt,auth) with Some d, Some (Git.Author a) -> Some (sprintf "%s (%s)" (d |> dtformat) a) | _ -> None
+                
                 printfn "===> %s" x.File
+                
                 printf "\t\tPriority : %i" x.Priority
-                //printfn "           Priority : %i   Changes : %i   LoC : %i    Authors : %i    Created : %s (%s)   LastUpdate : %s (%s)"  x.Priority x.Changes x.LoC x.Authours (x.CreatedAt |> dtformat) x.CreatedBy (x.LastUpdate |> dtformat) x.LastUpdateBy
-                x.Comments |> List.iter (printfn "      %s")
+                printIfNotZero "\tChanges : %i" x.Changes
+                printIfNotZero "\tLoC : %i" x.LoC
+                printIfNotZero "\tAuthours : %i" x.Authours
+                printIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy)
+                printIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy)
+                printfn ""
+                
+                x.Comments |> List.iter (printfn "\t%s")
         )
         report
