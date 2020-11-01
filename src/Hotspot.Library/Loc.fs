@@ -20,7 +20,6 @@ module Loc =
         for c in line do
             if t = Empty && Char.IsWhiteSpace c then 
                 prevWasSlash <- false
-                ignore()
             elif t = Empty && c = '/' then
                 if prevWasSlash then 
                     t <- Comment
@@ -30,7 +29,7 @@ module Loc =
 
 
     let getStats filePath =
-        let lineTypes = FileSystem.readLines(filePath) |> Seq.map (inspectLine) |> Seq.toList
+        let lineTypes = FileSystem.fileLineMap inspectLine filePath |> Seq.toList
         {
             Ext = FileSystem.ext filePath
             Lines = lineTypes |> List.length
