@@ -12,6 +12,7 @@ module FileSystem =
     let ext filePath = IO.FileInfo(filePath).Extension |> String.replace "." ""
     let relative (relativeTo : string) (path : string) = IO.Path.GetRelativePath(relativeTo, path)
     let loadText filePath = File.ReadAllText filePath
+    let readLines filePath = File.ReadLines filePath
     
     let rec mapFiles<'a> (f : string -> 'a) path =
         let dirs = path |> getDirs

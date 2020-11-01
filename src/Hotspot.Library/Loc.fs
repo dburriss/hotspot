@@ -3,7 +3,6 @@ namespace Hotspot
 module Loc =
     
     open System
-    open System.IO
     open Hotspot.Helpers
     
     type LineStats = {
@@ -31,7 +30,7 @@ module Loc =
 
 
     let getStats filePath =
-        let lineTypes = File.ReadLines(filePath) |> Seq.map (inspectLine) |> Seq.toList
+        let lineTypes = FileSystem.readLines(filePath) |> Seq.map (inspectLine) |> Seq.toList
         {
             Ext = FileSystem.ext filePath
             Lines = lineTypes |> List.length
