@@ -2,6 +2,7 @@ namespace Hotspot
 
 open System
 open Hotspot.Git
+open Hotspot.Helpers
 
 //=====================================
 // Repository
@@ -30,7 +31,8 @@ type RepositoryDependencies<'a> = {
     IsGitRepository : string -> Result<bool,string>
     GitRepository : ReadRepository
     NoVcsRepository : ReadRepository
-    FileSystemIter : RepositoryMap<'a>
+    //FileSystemIter : RepositoryMap<'a>
+    AppEnv : AppEnv<'a>
 }
 
 module RepositoryDependencies =
@@ -45,23 +47,25 @@ module RepositoryDependencies =
             IgnoreFile = ignoreFile
         } |> GitRepository)
         
-    let mapFiles<'a> (f : string -> 'a option) repository =
-        let data = match repository with | GitRepository data -> data | JustCode data -> data
-        let map = fun filePath ->
-            //printfn "MAP FILE: %s" filePath
-            if(filePath |> data.IgnoreFile) then filePath, None
-            else filePath, (f filePath)
-        FileSystem.mapFiles map data.Path
+//    let mapFiles<'a> env (f : string -> 'a option) repository =
+//        let data = match repository with | GitRepository data -> data | JustCode data -> data
+//        let map = fun filePath ->
+//            //printfn "MAP FILE: %s" filePath
+//            if(filePath |> data.IgnoreFile) then filePath, None
+//            else filePath, (f filePath)
+//        FileSystem.mapFiles env map data.Path
     
-    let Live = {
+    let Live env = {
         IsGitRepository = GitParse.isRepository
         GitRepository = gitRepository
         NoVcsRepository = fun ignore p -> Error (sprintf "%s is not under version control. Non version controlled repositories not supported." p)
-        FileSystemIter = mapFiles
+        //FileSystemIter = mapFiles env
+        AppEnv = env
     }
 
 module Repository =
-
+    open Hotspot.Helpers
+    
     let path = function | JustCode r -> r.Path | GitRepository r -> r.Path
     let createdAt = function | JustCode r -> r.CreatedAt | GitRepository r -> r.CreatedAt
     let lastUpdatedAt = function | JustCode r -> r.LastUpdatedAt | GitRepository r -> r.LastUpdatedAt
@@ -73,7 +77,15 @@ module Repository =
         | Ok false -> failwithf "%s is not a git repository. Only git currently supported." path
         | Ok true -> path |> deps.GitRepository ignoreFile
         | Error ex -> failwith ex
-        
+
+    let mapFiles<'a> env (f : string -> 'a option) repository =
+        let data = match repository with | GitRepository data -> data | JustCode data -> data
+        let map = fun filePath ->
+            //printfn "MAP FILE: %s" filePath
+            if(filePath |> data.IgnoreFile) then filePath, None
+            else filePath, (f filePath)
+        FileSystem.mapFiles env map data.Path
+      
     let forEach (deps : RepositoryDependencies<'a>) f (repository : Repository) =
-        deps.FileSystemIter f repository
-        
+        //deps.FileSystemIter f repository
+        mapFiles deps.AppEnv f repository     

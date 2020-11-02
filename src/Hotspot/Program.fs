@@ -17,12 +17,14 @@ open Spectre.Cli
 
 [<EntryPoint>]
 let main argv =
+    let env = AppEnv()
+    //(env :> ILog<RecommendationData>).Logger.Log
     //---------------------------------------------------------------------------------------------------------------
     // Console helpers
     //---------------------------------------------------------------------------------------------------------------
     
     let loadSccFile filePath =
-        FileSystem.loadText filePath
+        FileSystem.loadText env filePath
     
     //---------------------------------------------------------------------------------------------------------------
     // Usecases
@@ -37,7 +39,7 @@ let main argv =
         
     
     let printRecommendations metricsF projectFolder =
-        Measure.measure RepositoryDependencies.Live metricsF projectFolder
+        Measure.measure (RepositoryDependencies.Live env) metricsF projectFolder
         >> Analyse.analyse 
         >> Recommend.recommend
         >> Recommend.printRecommendations
@@ -81,14 +83,14 @@ let main argv =
                 
                 printfn "REPOSITORY: %s" repoDir
                 printfn "TARGET: %s" targetFolder
-                let repository =  repoDir |> Repository.init RepositoryDependencies.Live defaultIgnoreFile
+                let repository =  repoDir |> Repository.init (RepositoryDependencies.Live env) defaultIgnoreFile
                 let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
                 if(useScc) then
                     printfn "Using scc data..."
                     repository |> Result.map (printRecommendations (sccMetrics repoDir defaultIgnoreFile settings.SccFile) targetFolder) |> terminate
                 else
                     printfn "Using my metrics..."
-                    repository |> Result.map (printRecommendations Measure.myMetrics targetFolder) |> terminate
+                    repository |> Result.map (printRecommendations (Measure.myMetrics env) targetFolder) |> terminate
             config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
     )
     

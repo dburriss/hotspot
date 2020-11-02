@@ -66,9 +66,9 @@ module Measure =
     open Hotspot.Helpers
     open Hotspot.Git
     
-    let myMetrics filePath =
+    let myMetrics env filePath =
         {
-            LoC = Loc.getStats filePath |> fun x -> x.LoC |> Some
+            LoC = Loc.getStats env filePath |> fun x -> x.LoC |> Some
             CyclomaticComplexity = None
             InheritanceDepth = None
             Coupling = None
