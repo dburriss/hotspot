@@ -1,5 +1,8 @@
 namespace Hotspot.Helpers
 
+open Microsoft.Extensions.Logging
+open Spectre.IO
+
 module FileSystem =
     open System
     open System.IO
@@ -31,3 +34,28 @@ module FileSystem =
     
     // for globbing check
     // https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing?view=dotnet-plat-ext-3.1
+
+[<Interface>] type ILog<'a> = abstract Logger: ILogger<'a>
+
+module Log =
+    let live<'a> : ILogger<'a> =
+            let factory =
+                    LoggerFactory.Create(
+                        fun builder ->
+                            do builder.AddFilter("Microsoft", LogLevel.Warning) |> ignore
+                            do builder.AddFilter("System", LogLevel.Warning) |> ignore
+                            do builder.AddFilter("LoggingConsoleApp.Program", LogLevel.Debug) |> ignore
+                            do builder.AddConsole() |> ignore
+                            do builder.AddEventLog() |> ignore
+                    )
+            factory.CreateLogger()
+        
+    let debug (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogDebug fmt
+    let error (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogError fmt
+
+[<Interface>] type ILocalFileSystem = abstract FileSystem: IFileSystem
+    
+[<Struct>]
+type AppEnv<'a> = 
+    interface ILog<'a> with member _.Logger = Log.live<'a>
+    interface ILocalFileSystem with member _.FileSystem = failwith "Not implemented"

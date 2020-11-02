@@ -8,7 +8,12 @@ nuget Expecto
 nuget FsCheck 2.14.0
 nuget Expecto.FsCheck
 nuget Spectre.Cli
+nuget Spectre.IO
+nuget Spectre.IO.Testing
 nuget System.Text.Json
+nuget Microsoft.Extensions.Logging
+nuget Microsoft.Extensions.Logging.Console
+nuget Microsoft.Extensions.Logging.EventLog
 
 group Docs
   source https://api.nuget.org/v3/index.json
