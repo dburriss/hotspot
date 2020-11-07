@@ -100,7 +100,7 @@ module Measure =
         |> Seq.toList |> List.map snd |> List.choose id
        
     /// Get all files with Measurements
-    let measure (deps : RepositoryDependencies<Measurement>) measureMetrics projectFolder (repository : Repository) =
+    let measure<'a> (deps : RepositoryDependencies<'a>) measureMetrics projectFolder (repository : Repository) =
         {
             Path = repository |> Repository.path
             Project = projectFolder

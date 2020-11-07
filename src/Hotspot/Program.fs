@@ -14,10 +14,18 @@ open System
 open Hotspot
 open Hotspot.Helpers
 open Spectre.Cli
+open Microsoft.Extensions.DependencyInjection
 
 [<EntryPoint>]
 let main argv =
+    //---------------------------------------------------------------------------------------------------------------
+    // Bootstrapping
+    //---------------------------------------------------------------------------------------------------------------
     let env = AppEnv()
+    let registrations = ServiceCollection()
+    //registrations.AddSingleton(Func<IServiceProvider, AppEnv<HotspotSetting>>(fun _ -> AppEnv<HotspotSetting>())) |> ignore
+    //do registrations.AddSingleton<AppEnv<HotspotSetting>>() |> ignore
+    let registrar = TypeRegistrar(registrations)
     //(env :> ILog<RecommendationData>).Logger.Log
     //---------------------------------------------------------------------------------------------------------------
     // Console helpers
@@ -76,22 +84,23 @@ let main argv =
     app.Configure(
         fun config ->
             // RECOMMEND
-            //let recommendf = fun ctx settings -> 0
-            let recommendf = fun (ctx : CommandContext) (settings : HotspotSetting) ->
-                let repoDir = settings.RepositoryFolder
-                let targetFolder = settings.TargetFolder
-                
-                printfn "REPOSITORY: %s" repoDir
-                printfn "TARGET: %s" targetFolder
-                let repository =  repoDir |> Repository.init (RepositoryDependencies.Live env) defaultIgnoreFile
-                let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
-                if(useScc) then
-                    printfn "Using scc data..."
-                    repository |> Result.map (printRecommendations (sccMetrics repoDir defaultIgnoreFile settings.SccFile) targetFolder) |> terminate
-                else
-                    printfn "Using my metrics..."
-                    repository |> Result.map (printRecommendations (Measure.myMetrics env) targetFolder) |> terminate
-            config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
+//            let recommendf = fun ctx settings -> 0
+//            let recommendf = fun (ctx : CommandContext) (settings : HotspotSetting) ->
+//                let repoDir = settings.RepositoryFolder
+//                let targetFolder = settings.TargetFolder
+//                
+//                printfn "REPOSITORY: %s" repoDir
+//                printfn "TARGET: %s" targetFolder
+//                let repository =  repoDir |> Repository.init (RepositoryDependencies.Live env) (env)
+//                let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
+//                if(useScc) then
+//                    printfn "Using scc data..."
+//                    repository |> Result.map (printRecommendations (sccMetrics repoDir env settings.SccFile) targetFolder) |> terminate
+//                else
+//                    printfn "Using my metrics..."
+//                    repository |> Result.map (printRecommendations (Measure.myMetrics env) targetFolder) |> terminate
+//            config.AddDelegate<HotspotSetting>("recommend", Func<CommandContext, HotspotSetting, int>(recommendf)) |> ignore
+            config.AddCommand<RecommendCommand>("recommend") |> ignore
     )
     
 
@@ -99,5 +108,4 @@ let main argv =
     // Execute
     //---------------------------------------------------------------------------------------------------------------
     app.Run(argv)
-    
     

@@ -43,7 +43,7 @@ module SCC =
     let parse (json : string) =
         JsonSerializer.Deserialize<SccLine array>(json)
         
-    let toMetricsLookup root ignoreFile (sccLines : SccLine array) =
+    let toMetricsLookup root (ignoreFile : IIgnoreFile) (sccLines : SccLine array) =
         let fromFileLine (x : FileLine) =
             (FileSystem.combine(root, x.Location), {
                 LoC = x.Lines |> Some
@@ -55,7 +55,7 @@ module SCC =
             sccLines
             |> Array.map (fun x -> x.Files)
             |> Array.concat
-            |> Array.filter (fun x -> x.Filename |> ignoreFile |> not)
+            |> Array.filter (fun x -> x.Filename |> (ignoreFile.IgnoreFile) |> not)
             |> Array.distinctBy (fun x -> x.Location)
             |> Array.map fromFileLine
             |> Map.ofArray

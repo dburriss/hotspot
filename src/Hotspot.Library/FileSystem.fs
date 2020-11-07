@@ -2,10 +2,11 @@ namespace Hotspot.Helpers
 
 open Microsoft.Extensions.Logging
 open Spectre.IO
-open Spectre.IO
 
+type IgnoreFile = string -> bool
 [<Interface>] type ILog<'a> = abstract Logger: ILogger<'a>
 [<Interface>] type ILocalFileSystem = abstract FileSystem: IFileSystem
+[<Interface>] type IIgnoreFile = abstract IgnoreFile: IgnoreFile
 
 module FileSystem =
     open System
@@ -90,9 +91,15 @@ module Log =
     let info (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogInformation fmt
     let error (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogError fmt
 
+module Ignore =
+    let live : IgnoreFile =
+        let defaultIncludeList = ["cs";"fs";]
+        let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
+        defaultIgnoreFile
     
 [<Struct>]
 type AppEnv<'a> = 
     interface ILog<'a> with member _.Logger = Log.live<'a>
     interface ILocalFileSystem with member _.FileSystem = FileSystem() :> IFileSystem
+    interface IIgnoreFile with member _.IgnoreFile = Ignore.live
         

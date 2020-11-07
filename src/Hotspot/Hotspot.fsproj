@@ -11,6 +11,7 @@
         <RootNamespace>Hotspot</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="Infra.fs" />
         <Compile Include="RecommendUsecase.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>

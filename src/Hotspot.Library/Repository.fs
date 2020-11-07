@@ -8,14 +8,12 @@ open Hotspot.Helpers
 // Repository
 //=====================================
 
-type IgnoreFile = string -> bool
-
 /// Basic data for code repository
 type RepositoryData = {
     Path : string
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
-    IgnoreFile : IgnoreFile
+    IgnoreFile : IIgnoreFile
 }
 
 /// Represents different repository types
@@ -24,7 +22,7 @@ type Repository =
     | GitRepository of RepositoryData
 
 /// Create a repository instance from a directory
-type ReadRepository = IgnoreFile -> string -> Result<Repository, string>
+type ReadRepository = IIgnoreFile -> string -> Result<Repository, string>
 
 type RepositoryMap<'a> = (string -> 'a option) -> Repository -> (string * 'a option) seq
 type RepositoryDependencies<'a> = {
@@ -82,7 +80,7 @@ module Repository =
         let data = match repository with | GitRepository data -> data | JustCode data -> data
         let map = fun filePath ->
             //printfn "MAP FILE: %s" filePath
-            if(filePath |> data.IgnoreFile) then filePath, None
+            if(filePath |> data.IgnoreFile.IgnoreFile) then filePath, None
             else filePath, (f filePath)
         FileSystem.mapFiles env map data.Path
       
