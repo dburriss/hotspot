@@ -7,6 +7,7 @@
         <RootNamespace>Hotspot</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="App.fs" />
         <Compile Include="String.fs" />
         <Compile Include="Result.fs" />
         <Compile Include="FileSystem.fs" />

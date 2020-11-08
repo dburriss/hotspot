@@ -1,6 +1,7 @@
 FSharp.Core
 System.Text.Json
 Spectre.IO
+Spectre.Console
 Microsoft.Extensions.Logging
 Microsoft.Extensions.Logging.Console
 Microsoft.Extensions.Logging.EventLog

@@ -10,6 +10,7 @@ nuget Expecto.FsCheck
 nuget Spectre.Cli
 nuget Spectre.IO
 nuget Spectre.IO.Testing
+nuget Spectre.Console
 nuget System.Text.Json
 nuget Microsoft.Extensions.Logging
 nuget Microsoft.Extensions.Logging.Console
