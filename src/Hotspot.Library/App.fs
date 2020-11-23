@@ -360,9 +360,15 @@ type App = {
 
 module String =
     let hash (n : string) = n.GetHashCode()
+    let trim (s :string) = s.Trim()
+    let replace (oldValue : string) newValue (s : string) = s.Replace(oldValue, newValue)
 
 module ResizeArray =
     let empty<'a> = ResizeArray<'a>()
+    let map f (arr : ResizeArray<'a>) = arr |> Seq.map f |> ResizeArray  
+    let iter<'a> (f : 'a -> unit) (arr : ResizeArray<'a>) = arr |> Seq.iter f
+    let filter<'a> predicate (arr : ResizeArray<'a>) = arr |> Seq.filter predicate
+    let exists predicate (arr : ResizeArray<'a>) = arr |> Seq.exists predicate
 
 module Id =
     let from (n : string) = {
@@ -390,11 +396,10 @@ module Arg =
 
 module App =
     open Spectre.Console
-    let console =
-        let writer = new StringWriter()
+    let console writer =
         let settings = AnsiConsoleSettings()
-        settings.Ansi <- AnsiSupport.Yes
-        settings.ColorSystem <- ColorSystemSupport.TrueColor
+        settings.Ansi <- AnsiSupport.Detect
+        settings.ColorSystem <- ColorSystemSupport.Detect
         settings.Out <- writer
         AnsiConsole.Create(settings)
     
@@ -429,6 +434,20 @@ module App =
     /// help message.
     let about txt (app : App) = { app with about = Some txt }
     
+     /// Allows the subcommand to be used as if it were an `Arg.short`.
+    ///
+    /// Sets the short version of the subcommand flag without the preceding `-`.
+    let short c (app : App) = { app with shortFlag = Some c }
+    
+    /// Allows the subcommand to be used as if it were an `Arg.long`.
+    ///
+    /// Sets the long version of the subcommand flag without the preceding `--`.
+    ///
+    /// **NOTE:** Any leading `-` characters will be stripped.
+    let long s (app : App) =
+        let s = s |> (String.trim >> String.replace "-" "")
+        { app with longFlag = Some s }
+    
     /// Sets the help text for the auto-generated help argument and subcommand.
     ///
     /// By default clam sets this to "Prints help information" for the help
@@ -443,21 +462,78 @@ module App =
     /// Overrides the auto-generated help text
     let overrideHelp txt (app : App) = { app with helpStr = Some txt }
     
+    /// Get the version of the app/command
+    let GetVersion (app : App) = app.version |> Option.defaultValue ""
+    
+    /// Get the help message specified via `App.about`.
+    let GetAbout (app : App) = app.about |> Option.defaultValue ""
+    
     let private deriveDisplayOrder (app : App) =
         // TODO: 08/11/2020 dburriss@xebia.com | Derive display order
         app
+    
+    let private hasHelp (app : App) =
+        app.commands
+        |> ResizeArray.exists (fun a -> a.name = "help")
         
-    let private createHelpAndVersion (app : App) =
-        // TODO: 08/11/2020 dburriss@xebia.com | Set default version to ''
-        // TODO: 08/11/2020 dburriss@xebia.com | Push the help command
-        // TODO: 08/11/2020 dburriss@xebia.com | Push the version command
+    let private isHelp (app : App) = app.name = "help"
+        
+    let private hasVersion (app : App) =
+        app.commands
+        |> ResizeArray.exists (fun a -> a.name = "version")
+        
+    let private isVersion (app : App) = app.name = "version"
+    let private isHelpOrVersion (app : App) = isHelp app || isVersion app 
+    let private sPrintHelp (app : App) =
+        sprintf
+            "
+%s %s %s
+%s %s
+
+Usage:
+
+Options:
+
+Commands:
+            "
+            app.name (app |> GetVersion) (Environment.NewLine)
+            (app |> GetAbout) (Environment.NewLine)
+            
+        
+    let rec private createHelpAndVersion (app : App) =
+        let setDefaults (app : App) =
+            app |> fun a ->
+                let updatedVersion =
+                    { a with version = if Option.isNone a.version then Some "" else a.version }
+                if a |> hasHelp |> not && app |> isHelpOrVersion |> not then
+                    let help = create "help" |> about "Prints help information"
+                    updatedVersion.commands.Add(help)
+                if a |> hasVersion |> not && app |> isHelpOrVersion |> not then
+                    let version = create "version" |> about "Display version info"
+                    updatedVersion.commands.Add(version)
+                updatedVersion
+                
+        let app = setDefaults app
+        for i = 0 to (app.commands.Count - 1) do
+            let cur = app.commands.[i]
+            app.commands.[i] <- createHelpAndVersion cur
         app
         
     let private build (app : App) =
         app |> deriveDisplayOrder |> createHelpAndVersion
         // TODO: 08/11/2020 dburriss@xebia.com | Build indexes
-        
-        
+    
+    /// Writes the full help message to the user to a [`io::Write`] object in the same method as if
+    /// the user ran `-h`.
+    ///
+    /// **NOTE:** clam has the ability to distinguish between "short" and "long" help messages
+    /// depending on if the user ran [`-h` (short)] or [`--help` (long)].
+    let writeHelp (writer : TextWriter) (app :App) =
+        app |> build
+        |> fun a -> a.helpStr
+                    |> Option.defaultWith (fun () -> sPrintHelp a)
+                    |> fun s -> writer.Write(s) |> ignore
+        writer
     
     /// Prints the full help message to stdout using the same
     /// method as if someone ran `-h` to request the help message.
@@ -465,10 +541,12 @@ module App =
     /// **NOTE:** clam has the ability to distinguish between "short" and "long" help messages
     /// depending on if the user ran [`-h` (short)] or [`--help` (long)].
     let printHelp (app : App) =
-        app |> build
-        |> fun a -> a.helpStr
-                    |> Option.defaultValue ""
-                    |> fun h -> console.WriteLine(h, Style.Plain)
+        let writer = new StringWriter()
+        app
+        |> build
+        |> writeHelp writer
+        |> fun w -> w.ToString()
+        |> fun h -> (console writer).WriteLine(h, Style.Plain)
         
     let arg (a : Arg) (app : App) =
         let args = app.args.Add(a.id.id, a)
