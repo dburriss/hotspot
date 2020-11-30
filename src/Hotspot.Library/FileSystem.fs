@@ -14,11 +14,11 @@ module FileSystem =
     
     let private getDirs (env : ILocalFileSystem) path =
         //IO.Directory.GetDirectories(path)
-        env.FileSystem.GetDirectory(path).GetDirectories("*", SearchScope.Current) |> Seq.map (fun d -> d.Path |> string)
+        env.FileSystem.GetDirectory(path).GetDirectories("*", SearchScope.Current) |> Seq.map (fun d -> d.Path |> string) |> Seq.toArray
         
     let private getFiles (env : ILocalFileSystem) path =
         //IO.Directory.GetFiles(path)
-        env.FileSystem.GetDirectory(path).GetFiles("*", SearchScope.Current) |> Seq.map (fun f -> f.Path |> string)
+        env.FileSystem.GetDirectory(path).GetFiles("*", SearchScope.Current) |> Seq.map (fun f -> f.Path |> string) |> Seq.toArray
     
     let private getFileLines (file : IFile) =
         use stream = file.OpenRead()
@@ -26,7 +26,7 @@ module FileSystem =
         seq {
             while not (reader.EndOfStream) do
                 reader.ReadLine()
-        }
+        } |> Seq.toArray
 
     let private readLines (env : ILocalFileSystem) filePath =
         //File.ReadLines filePath
@@ -51,7 +51,8 @@ module FileSystem =
     let ext filePath =
         IO.FileInfo(filePath).Extension |> String.replace "." ""
         
-    let fileLineMap (env : ILocalFileSystem) f filePath = filePath |> readLines env |> Seq.map f
+    let fileLineMap (env : ILocalFileSystem)
+        f filePath = filePath |> readLines env |> Seq.map f
     
     let rec mapFiles<'a> (env : ILocalFileSystem) (f : string -> 'a) (path : string) =
         let dirPath = DirectoryPath path

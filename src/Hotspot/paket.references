@@ -1,7 +1,7 @@
 FSharp.Core
-Spectre.Cli
 Spectre.IO
 Microsoft.Extensions.Logging
 Microsoft.Extensions.Logging.Console
 Microsoft.Extensions.Logging.EventLog
 Microsoft.Extensions.DependencyInjection
+Argu

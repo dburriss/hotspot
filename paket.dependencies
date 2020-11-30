@@ -7,7 +7,6 @@ nuget FSharp.Core
 nuget Expecto
 nuget FsCheck 2.14.0
 nuget Expecto.FsCheck
-nuget Spectre.Cli
 nuget Spectre.IO
 nuget Spectre.IO.Testing
 nuget Spectre.Console
@@ -16,6 +15,7 @@ nuget Microsoft.Extensions.Logging
 nuget Microsoft.Extensions.Logging.Console
 nuget Microsoft.Extensions.Logging.EventLog
 nuget Microsoft.Extensions.DependencyInjection
+nuget Argu
 
 group Docs
   source https://api.nuget.org/v3/index.json
