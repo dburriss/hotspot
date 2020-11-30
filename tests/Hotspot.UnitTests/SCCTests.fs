@@ -1,4 +1,4 @@
-module Tests
+module SCCTests
 
 open Expecto
 open Hotspot
@@ -14,7 +14,7 @@ let tests =
             Expect.equal fileLine.Filename "build.fsx" "Name should be F#"
         }
 
-        testProperty "Reverse of reverse of a list is the original list" (
-            fun (xs:list<int>) -> List.rev (List.rev xs) = xs
-        )
+//        testProperty "Reverse of reverse of a list is the original list" (
+//            fun (xs:list<int>) -> List.rev (List.rev xs) = xs
+//        )
     ]
