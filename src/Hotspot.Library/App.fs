@@ -2,12 +2,13 @@ namespace Clam
 
 open System
 open System.IO
-open Spectre.Console
 
 type Id = {
     name : string
     id : int
 }
+
+type Input = Array
 
 type ArgSettings =
     /// Specifies that an arg must be used
@@ -336,6 +337,7 @@ type AppSettings =
 
     | ContainsLast
 
+
 /// Represents a command line interface which is made up of all possible
 /// command line arguments and subcommands. Interface arguments and settings are
 /// configured using the "builder pattern." Once all configuration is complete,
@@ -356,6 +358,7 @@ type App = {
     commands : App ResizeArray
     version : string option
     longVersion : string option
+    appSettings : Set<AppSettings>
 }
 
 module String =
@@ -394,6 +397,10 @@ module Arg =
     
     let hasSwitch (arg : Arg) = Option.isSome arg.short || Option.isSome arg.long
 
+module ArgMatcher =
+    let contains (id : Id) =
+        ()
+
 module App =
     open Spectre.Console
     let console writer =
@@ -417,6 +424,7 @@ module App =
         commands = ResizeArray.empty
         version = None
         longVersion = None
+        appSettings = Set.empty
     }
     
     /// Sets a string of author(s) that will be displayed to the user when they
@@ -503,7 +511,7 @@ Commands:
     let rec private createHelpAndVersion (app : App) =
         let setDefaults (app : App) =
             app |> fun a ->
-                let updatedVersion =
+                let mutable updatedVersion =
                     { a with version = if Option.isNone a.version then Some "" else a.version }
                 if a |> hasHelp |> not && app |> isHelpOrVersion |> not then
                     let help = create "help" |> about "Prints help information"
@@ -511,6 +519,7 @@ Commands:
                 if a |> hasVersion |> not && app |> isHelpOrVersion |> not then
                     let version = create "version" |> about "Display version info"
                     updatedVersion.commands.Add(version)
+                updatedVersion <- { updatedVersion with appSettings = updatedVersion.appSettings.Add(AppSettings.Built) }
                 updatedVersion
                 
         let app = setDefaults app
@@ -519,7 +528,7 @@ Commands:
             app.commands.[i] <- createHelpAndVersion cur
         app
         
-    let private build (app : App) =
+    let _build (app : App) =
         app |> deriveDisplayOrder |> createHelpAndVersion
         // TODO: 08/11/2020 dburriss@xebia.com | Build indexes
     
@@ -529,7 +538,7 @@ Commands:
     /// **NOTE:** clam has the ability to distinguish between "short" and "long" help messages
     /// depending on if the user ran [`-h` (short)] or [`--help` (long)].
     let writeHelp (writer : TextWriter) (app :App) =
-        app |> build
+        app |> _build
         |> fun a -> a.helpStr
                     |> Option.defaultWith (fun () -> sPrintHelp a)
                     |> fun s -> writer.Write(s) |> ignore
@@ -543,7 +552,7 @@ Commands:
     let printHelp (app : App) =
         let writer = new StringWriter()
         app
-        |> build
+        |> _build
         |> writeHelp writer
         |> fun w -> w.ToString()
         |> fun h -> (console writer).WriteLine(h, Style.Plain)
@@ -551,7 +560,11 @@ Commands:
     let arg (a : Arg) (app : App) =
         let args = app.args.Add(a.id.id, a)
         { app with args = args }
-        
-    let getMatchesFrom (args: string array) (app : App) =
+    
+    let private doParse (input : Input) (app : App) =
         ()
+    let getMatchesFrom (args: string array) (app : App) =
+        let app = app |> _build
+        
+        app
         
