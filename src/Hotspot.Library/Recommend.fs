@@ -26,7 +26,8 @@ type RecommendationReport = {
 type MakeRecommendations = AnalyzedRepository -> RecommendationReport
 
 module Recommend =
-    open System.Runtime
+    open Spectre.Console
+    
     let private distinctAuthors (history : Git.Log list) = history |> List.distinctBy (fun h -> h.Author)
 
     let recommendations (data : RecommendationData) =
@@ -91,6 +92,31 @@ module Recommend =
         let max = scores |> List.max
 
         makeRecommendationsWith (analysisRecommendation recommendations (Stats.shiftTo100L min max >> int)) analyzedRepo
+    // https://coolors.co/d88c9a-f2d0a9-f1e3d3-99c1b9-8e7dbe
+    let private text (s : string) =
+        AnsiConsole.Foreground <- Color.NavajoWhite1
+        AnsiConsole.Write(s)
+        AnsiConsole.Reset()
+        
+    let private warning (s : string) =
+        AnsiConsole.Foreground <- Color.LightGoldenrod2_2
+        AnsiConsole.Write(s)
+        AnsiConsole.Reset()
+        
+    let private severe (s : string) =
+        AnsiConsole.Foreground <- Color.IndianRed
+        AnsiConsole.Write(s)
+        AnsiConsole.Reset()
+        
+    let private info (s : string) =
+        AnsiConsole.Foreground <- Color.DarkSeaGreen3
+        AnsiConsole.Write(s)
+        AnsiConsole.Reset()
+        
+    let private debug (s : string) =
+        AnsiConsole.Foreground <- Color.MediumPurple1
+        AnsiConsole.Write(s)
+        AnsiConsole.Reset()
         
     let printRecommendations report =
         
@@ -115,21 +141,31 @@ module Recommend =
         |> Array.iter (fun x ->
             if(x.Comments.Length > 0) then
                 let dtformat (dt : DateTimeOffset) = dt.ToLocalTime().ToString("yyyy-MM-dd")
-                let printIfSome t = function Some x -> (printf t x) | None -> ()
-                let printIfNotZero t i = if i > 0 then printf t i else ()
+                let sprintIfSome t = function Some x -> (sprintf t x) | None -> ""
+                let sprintIfNotZero t i = if i > 0 then sprintf t i else ""
                 let changeAuthour dt auth = match (dt,auth) with Some d, Some (Git.Author a) -> Some (sprintf "%s (%s)" (d |> dtformat) a) | _ -> None
-                
-                printfn "===> %s" x.File
-                
-                printf "\t\tPriority : %i" x.Priority
-                printIfNotZero "\tChanges : %i" x.Changes
-                printIfSome "\tComplexity : %i" x.Complexity
-                printIfSome "\tLoC : %i" x.LoC
-                printIfNotZero "\tAuthours : %i" x.Authours
-                printIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy)
-                printIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy)
+
+                sprintf "===> %s" x.File |> text
                 printfn ""
-                
-                x.Comments |> List.iter (printfn "\t%s")
+                sprintf "\t\tPriority : %i" x.Priority |> debug
+                sprintIfNotZero "\tChanges : %i" x.Changes |> debug
+                sprintIfSome "\tComplexity : %i" x.Complexity |> debug
+                sprintIfSome "\tLoC : %i" x.LoC |> debug
+                sprintIfNotZero "\tAuthours : %i" x.Authours |> debug
+                sprintIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy) |> debug
+                sprintIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy) |> debug
+                printfn ""
+                x.Comments
+                |> List.iter (fun s ->
+                                if s.StartsWith("SEVERITY: HIGH") then
+                                    sprintf "\t%s" s |> severe
+                                    printfn ""
+                                elif s.StartsWith("SEVERITY: MEDIUM") then
+                                    sprintf "\t%s" s |> warning
+                                    printfn ""
+                                else
+                                    sprintf "\t%s" s |> info
+                                    printfn ""
+                             )
         )
         report
