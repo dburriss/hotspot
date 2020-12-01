@@ -3,10 +3,10 @@ open System
 #r "../../packages/docs/FSharp.Formatting/lib/netstandard2.0/FSharp.CodeFormat.dll"
 #r "../../packages/docs/FSharp.Formatting/lib/netstandard2.0/FSharp.Markdown.dll"
 #r "../../packages/docs/FSharp.Formatting/lib/netstandard2.0/FSharp.Literate.dll"
-#if !FORNAX
+//#if !FORNAX
 #load "contentloader.fsx"
 open Contentloader
-#endif
+//#endif
 
 open System.IO
 open FSharp.Literate

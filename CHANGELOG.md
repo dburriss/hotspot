@@ -8,4 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.1]
 ### Added
-- Initial release
+- Hardcoded recommendations
+- LoC for languages where comment is `//` (no multiline comments supported)
+- SCC as a source for accurate LoC and Cyclomatic Complexity

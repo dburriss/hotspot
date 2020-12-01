@@ -1,6 +1,6 @@
 # Hotspot
 
-Hotspot is a dotnet command line tool for analyzing code hotspots by looking at git history, LoC, complexity, and test test coverage. More coming soon...
+Hotspot is a dotnet command line tool for analyzing code hotspots by looking at git history, LoC, complexity, and test coverage. More coming soon...
 
 ## Using SCC
 

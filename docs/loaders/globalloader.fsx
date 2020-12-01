@@ -8,8 +8,8 @@ type SiteInfo = {
 }
 
 let config = {
-    title = "Coach"
-    description = "Description of Coach project"
+    title = "Hotspot"
+    description = "Description of Hotspot project"
     theme_variant = Some "blue"
     root_url =
       #if WATCH
