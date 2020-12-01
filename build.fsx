@@ -19,9 +19,9 @@ open Fake.Api
 
 let project = "Hotspot"
 let toolName = "hotspot"
-let summary = "Gives recommendations based on source code and git history"
+let summary = "Identifies hotspots in a codebase that warrant some attention"
 let authors = "Devon Burriss"
-let tags = "code quality, metrics"
+let tags = "code quality metrics"
 let copyright = "Devon Burriss 2020"
 
 let gitOwner = "dburriss"
@@ -184,8 +184,13 @@ Target.create "Push" (fun _ ->
         | _ -> UserInput.getUserPassword "NuGet Key: "
     Paket.push (fun p -> { p with WorkingDir = nugetDir; ApiKey = key; ToolType = ToolType.CreateLocalTool() }))
 
+Target.create "Uninstall-Local" (fun _ ->
+    exec "dotnet" (sprintf @"tool uninstall %s" toolName) "."//need to check if it is in the list 1st)
+    exec "dotnet" "nuget locals all -c" "."
+    exec "dotnet" "tool restore" "."
+    exec "dotnet" "paket install" "." )
+
 Target.create "Install-Local" (fun _ ->
-    //exec "dotnet" (sprintf @"tool uninstall %s" toolName) "."//need to check if it is in the list 1st
     exec "dotnet" (sprintf @"tool install --add-source ./out --version %s %s" nugetVersion toolName) ".")
 
 // --------------------------------------------------------------------------------------
@@ -203,8 +208,7 @@ Target.create "Release" DoNothing
  ==> "BuildRelease"
  ==> "Docs"
 
-"Default"
-  ==> "Pack"
+"Pack"
   ==> "Install-Local"
 
 "Default"
