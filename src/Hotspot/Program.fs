@@ -52,31 +52,39 @@ let main argv =
     //---------------------------------------------------------------------------------------------------------------
     // Commands setup
     //---------------------------------------------------------------------------------------------------------------
+    let (|Help|_|) (result : ParseResults<HotSpotCommands>) : unit option =
+        if(result.IsUsageRequested) then Some ()
+        else None
+    
     let (|RecommendCommand|_|) (result : ParseResults<HotSpotCommands>) : RecommendSetting option =
         let cmd = result.TryGetResult HotSpotCommands.Recommend
         match cmd with
         | None -> None
         | Some recommendArgs ->
+            let executingFolder = Environment.CurrentDirectory
             Some {
-               RepositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue "./"
-               TargetFolder = recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue "./")
+               RepositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
+               TargetFolder = recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder)
                SccFile = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
             }
     //---------------------------------------------------------------------------------------------------------------
     // Execute
     //---------------------------------------------------------------------------------------------------------------
-    let parser = ArgumentParser.Create<HotSpotCommands>(programName = "hotspot")
+    let parser = ArgumentParser.Create<HotSpotCommands>(programName = "[dotnet] hotspot")
     try
-        let result = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
+        let result = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
         match result with
         | RecommendCommand settings ->
             RecommendCommand.recommendf env settings
             |> ignore
-        | _ -> ignore()
+        | _ ->
+            let usage = parser.PrintUsage()
+            Console.WriteLine(usage);
         
         0
     with e ->
         eprintf "%s" e.Message
+        printfn ""
         let usage = parser.PrintUsage()
         Console.WriteLine(usage);
         

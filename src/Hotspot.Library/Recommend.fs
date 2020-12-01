@@ -92,6 +92,7 @@ module Recommend =
         let max = scores |> List.max
 
         makeRecommendationsWith (analysisRecommendation recommendations (Stats.shiftTo100L min max >> int)) analyzedRepo
+    
     // https://coolors.co/d88c9a-f2d0a9-f1e3d3-99c1b9-8e7dbe
     let private text (s : string) =
         AnsiConsole.Foreground <- Color.NavajoWhite1

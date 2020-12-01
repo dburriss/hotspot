@@ -1,9 +1,10 @@
+version 5.249.0
 source https://api.nuget.org/v3/index.json
 
 storage: none
 framework: netcoreapp3.1, netstandard2.0, netstandard2.1
 
-nuget FSharp.Core
+nuget FSharp.Core 4.7.0
 nuget Expecto
 nuget FsCheck 2.14.0
 nuget Expecto.FsCheck
@@ -14,7 +15,6 @@ nuget System.Text.Json
 nuget Microsoft.Extensions.Logging
 nuget Microsoft.Extensions.Logging.Console
 nuget Microsoft.Extensions.Logging.EventLog
-nuget Microsoft.Extensions.DependencyInjection
 nuget Argu
 
 group Docs
@@ -23,6 +23,7 @@ group Docs
   framework: netstandard2.0
   storage: symlink
 
+  nuget FSharp.Core 4.7.0
   nuget FSharp.Compiler.Service ~> 35.0
   nuget FSharp.Formatting ~> 4.1
   nuget Newtonsoft.Json
@@ -34,6 +35,7 @@ group Build
   framework: netstandard2.0
   storage: none
 
+  nuget FSharp.Core 4.7.0
   nuget Fake.Core.Target
   nuget Fake.Core.Process
   nuget Fake.DotNet.Cli

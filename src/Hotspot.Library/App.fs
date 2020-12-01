@@ -2,6 +2,7 @@ namespace Clam
 
 open System
 open System.IO
+open FSharp.Core
 
 type Id = {
     name : string
@@ -62,11 +63,11 @@ type Arg = {
     about : string option
     short : char option
     long : string option
-    dispOrd : uint
-    unifiedOrd : uint
+    dispOrd : UInt32
+    unifiedOrd : UInt32
     longAbout : string option
     valDelim : char option
-    index : uint option
+    index : UInt32 option
     isGlobal : bool
 }
 
