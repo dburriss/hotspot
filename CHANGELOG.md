@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2]
+### Added
+- Fixes and improvements in finding machines git binary
+- Panic with invalid setup or request and return better error message
+
 ## [0.0.1]
 ### Added
 - the `recommend` command

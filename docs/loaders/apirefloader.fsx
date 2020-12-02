@@ -68,5 +68,6 @@ let loader (projectRoot: string) (siteContet: SiteContents) =
     with
     | ex ->
       printfn "%A" ex
+      printfn "%A" ex.Source
 
     siteContet

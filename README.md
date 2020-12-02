@@ -20,13 +20,16 @@ For help, run:
 
 You can also install it locally. See the [dotnet tool docs](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install)
 
+Sometimes Hotspot will have some trouble finding your git binary. It needs access to this to run the commands on your git repository to get history to inspect.
+This is easy enough to fix. Just add an ENVIRONMENT variable: `HOTSPOT_GIT_EXECUTABLE` = *path/to/git/binary/file*.
+
 ## Features
 
 - [x] Recommendations based on git changes & complexity
 - [x] Consumption of [SCC](https://github.com/boyter/scc) to contribute metrics for analysis
 - [ ] Integrate test coverage report in analysis
 - [ ] Detailed control of the files that are included in the analysis
-- [ ] Multiple supported output channels (console, API, file) and formats (text, markdown, html, json)
+- [ ] Multiple supported output channels (console, API?, file) and formats (text, markdown, html, json)
 - [ ] Multiple metric sources: SCC, Visual Studio's Metric.exe, SonarQube
 
 ## Using SCC

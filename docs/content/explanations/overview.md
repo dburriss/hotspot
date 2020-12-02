@@ -24,6 +24,9 @@ For help, run:
 
 You can also install it locally. See the [dotnet tool docs](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install)
 
+Sometimes Hotspot will have some trouble finding your git binary. It needs access to this to run the commands on your git repository to get history to inspect.
+This is easy enough to fix. Just add an ENVIRONMENT variable: `HOTSPOT_GIT_EXECUTABLE` = *path/to/git/binary/file*.
+
 ## Features
 
 - Recommendations based on git changes & complexity

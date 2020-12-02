@@ -9,13 +9,13 @@ type SiteInfo = {
 
 let config = {
     title = "Hotspot"
-    description = "Description of Hotspot project"
-    theme_variant = Some "blue"
+    description = "Hotspot is a CLI tool for inspecting source code in a git repository for possible hotpots you may want to look into to decrease maintenance and potential risk."
+    theme_variant = Some "red"
     root_url =
       #if WATCH
         "http://localhost:8080/"
       #else
-        "TODO: ADD_ROOT_LINK"
+        "https://dburriss.github.io/hotspot/"
       #endif
 }
 
