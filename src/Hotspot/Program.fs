@@ -78,16 +78,13 @@ let main argv =
             RecommendCommand.recommendf env settings
             |> ignore
         | _ ->
-            let usage = parser.PrintUsage()
-            Console.WriteLine(usage);
+            parser.PrintUsage() |> TerminalPrint.text
         
         0
     with e ->
-        eprintf "%s" e.Message
+        sprintf "%s" e.Message |> TerminalPrint.severe
         printfn ""
-        let usage = parser.PrintUsage()
-        Console.WriteLine(usage);
-        
+        parser.PrintUsage() |> TerminalPrint.text
         1
     
     

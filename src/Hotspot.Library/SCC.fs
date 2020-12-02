@@ -40,6 +40,7 @@ type SccLine = {
 
 module SCC =
     open System.Text.Json
+    open System.Diagnostics
     let parse (json : string) =
         JsonSerializer.Deserialize<SccLine array>(json)
         
@@ -59,6 +60,8 @@ module SCC =
             |> Array.distinctBy (fun x -> x.Location)
             |> Array.map fromFileLine
             |> Map.ofArray
+        Debug.WriteLine(sprintf "SCC file count: %i" (Array.sumBy (fun x -> x.Count) sccLines))
+        Debug.WriteLine(sprintf "SCC matched after ignore: %i" lookup.Count)
         //printfn "lookup %A" lookup
         fun filePath ->
             lookup |> Map.tryFind filePath

@@ -10,6 +10,7 @@
         <Compile Include="App.fs" />
         <Compile Include="String.fs" />
         <Compile Include="Result.fs" />
+        <Compile Include="TerminalPrint.fs" />
         <Compile Include="FileSystem.fs" />
         <Compile Include="GitCommand.fs" />
         <Compile Include="GitParse.fs" />

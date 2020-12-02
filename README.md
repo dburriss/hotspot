@@ -22,12 +22,12 @@ You can also install it locally. See the [dotnet tool docs](https://docs.microso
 
 ## Features
 
-- Recommendations based on git changes & complexity
-- Consumption of [SCC](https://github.com/boyter/scc) to contribute metrics for analysis
-- Integrate test coverage report in analysis
-- Detailed control of the files that are included in the analysis
-- Multiple supported output channels (console, API, file) and formats (text, markdown, html, json)
-- Multiple metric sources: SCC, Visual Studio's Metric.exe, SonarQube
+- [x] Recommendations based on git changes & complexity
+- [x] Consumption of [SCC](https://github.com/boyter/scc) to contribute metrics for analysis
+- [ ] Integrate test coverage report in analysis
+- [ ] Detailed control of the files that are included in the analysis
+- [ ] Multiple supported output channels (console, API, file) and formats (text, markdown, html, json)
+- [ ] Multiple metric sources: SCC, Visual Studio's Metric.exe, SonarQube
 
 ## Using SCC
 

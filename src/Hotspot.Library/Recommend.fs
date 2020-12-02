@@ -92,32 +92,6 @@ module Recommend =
         let max = scores |> List.max
 
         makeRecommendationsWith (analysisRecommendation recommendations (Stats.shiftTo100L min max >> int)) analyzedRepo
-    
-    // https://coolors.co/d88c9a-f2d0a9-f1e3d3-99c1b9-8e7dbe
-    let private text (s : string) =
-        AnsiConsole.Foreground <- Color.NavajoWhite1
-        AnsiConsole.Write(s)
-        AnsiConsole.Reset()
-        
-    let private warning (s : string) =
-        AnsiConsole.Foreground <- Color.LightGoldenrod2_2
-        AnsiConsole.Write(s)
-        AnsiConsole.Reset()
-        
-    let private severe (s : string) =
-        AnsiConsole.Foreground <- Color.IndianRed
-        AnsiConsole.Write(s)
-        AnsiConsole.Reset()
-        
-    let private info (s : string) =
-        AnsiConsole.Foreground <- Color.DarkSeaGreen3
-        AnsiConsole.Write(s)
-        AnsiConsole.Reset()
-        
-    let private debug (s : string) =
-        AnsiConsole.Foreground <- Color.MediumPurple1
-        AnsiConsole.Write(s)
-        AnsiConsole.Reset()
         
     let printRecommendations report =
         
@@ -146,26 +120,26 @@ module Recommend =
                 let sprintIfNotZero t i = if i > 0 then sprintf t i else ""
                 let changeAuthour dt auth = match (dt,auth) with Some d, Some (Git.Author a) -> Some (sprintf "%s (%s)" (d |> dtformat) a) | _ -> None
 
-                sprintf "===> %s" x.File |> text
+                sprintf "===> %s" x.File |> TerminalPrint.text
                 printfn ""
-                sprintf "\t\tPriority : %i" x.Priority |> debug
-                sprintIfNotZero "\tChanges : %i" x.Changes |> debug
-                sprintIfSome "\tComplexity : %i" x.Complexity |> debug
-                sprintIfSome "\tLoC : %i" x.LoC |> debug
-                sprintIfNotZero "\tAuthours : %i" x.Authours |> debug
-                sprintIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy) |> debug
-                sprintIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy) |> debug
+                sprintf "\t\tPriority : %i" x.Priority |> TerminalPrint.debug
+                sprintIfNotZero "\tChanges : %i" x.Changes |> TerminalPrint.debug
+                sprintIfSome "\tComplexity : %i" x.Complexity |> TerminalPrint.debug
+                sprintIfSome "\tLoC : %i" x.LoC |> TerminalPrint.debug
+                sprintIfNotZero "\tAuthours : %i" x.Authours |> TerminalPrint.debug
+                sprintIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy) |> TerminalPrint.debug
+                sprintIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy) |> TerminalPrint.debug
                 printfn ""
                 x.Comments
                 |> List.iter (fun s ->
                                 if s.StartsWith("SEVERITY: HIGH") then
-                                    sprintf "\t%s" s |> severe
+                                    sprintf "\t%s" s |> TerminalPrint.severe
                                     printfn ""
                                 elif s.StartsWith("SEVERITY: MEDIUM") then
-                                    sprintf "\t%s" s |> warning
+                                    sprintf "\t%s" s |> TerminalPrint.warning
                                     printfn ""
                                 else
-                                    sprintf "\t%s" s |> info
+                                    sprintf "\t%s" s |> TerminalPrint.info
                                     printfn ""
                              )
         )

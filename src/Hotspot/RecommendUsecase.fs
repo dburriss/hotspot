@@ -2,7 +2,6 @@ namespace Hotspot
 
 open System
 open Hotspot.Helpers
-open Spectre.Console
 
 type RecommendSetting = {
     RepositoryFolder : string
@@ -11,16 +10,7 @@ type RecommendSetting = {
 }
   
 module RecommendCommand =
-
-    let private subdued (s : string) =
-        AnsiConsole.Foreground <- Color.SteelBlue
-        AnsiConsole.WriteLine(s)
-        AnsiConsole.Reset()    
-    let private highlight (s : string) =
-        AnsiConsole.Foreground <- Color.Blue
-        AnsiConsole.WriteLine(s)
-        AnsiConsole.Reset()
-    
+    open System.Diagnostics
     let private defaultIgnoreFile env : IIgnoreFile = env :> IIgnoreFile
     
     let private terminate = function
@@ -34,6 +24,7 @@ module RecommendCommand =
 
     // Use case (default): Use LoC & print to console
     let private sccMetrics env root ignoreFile sccFile =
+        Debug.WriteLine(sprintf "SCC file: %s" sccFile)
         sccFile
         |> loadSccFile env
         |> SCC.parse
@@ -50,13 +41,15 @@ module RecommendCommand =
         let repositoryFolder = settings.RepositoryFolder
         let targetFolder = settings.TargetFolder
         
-        sprintf "REPOSITORY: %s" repositoryFolder |> highlight
-        sprintf "TARGET: %s" targetFolder |> highlight
+        sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
+        sprintf "TARGET: %s" targetFolder |> TerminalPrint.highlight
         let repository =  repositoryFolder |> Repository.init (RepositoryDependencies.Live env) (defaultIgnoreFile env)
         let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
         if(useScc) then
-            sprintf "Using scc data..." |> subdued
+            Debug.WriteLine("Metric source: SCC")
+            sprintf "Metric source: SCC" |> TerminalPrint.subdued
             repository |> Result.map (printRecommendations env (sccMetrics env repositoryFolder (defaultIgnoreFile env) settings.SccFile) targetFolder) |> terminate
         else
-            sprintf "Using my metrics..." |> subdued
+            Debug.WriteLine("Metric source: LoC")
+            sprintf "Metric source: LoC count" |> TerminalPrint.subdued
             repository |> Result.map (printRecommendations env (Measure.myMetrics env) targetFolder) |> terminate

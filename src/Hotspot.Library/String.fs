@@ -11,3 +11,5 @@ module String =
     let lower (s : string) = s.ToLowerInvariant()
     let contains (part : string) (s : string) = s.Contains(part)
     let containsAnyOf partList s = partList |> List.tryFind (fun part -> contains part s) |> Option.isSome
+    let isEmpty = String.IsNullOrEmpty
+    let isNotEmpty = isEmpty >> not

@@ -11,22 +11,29 @@ type IgnoreFile = string -> bool
 module FileSystem =
     open System
     open System.IO
+    open System.Diagnostics
     
-    let private getDirs (env : ILocalFileSystem) path =
+    let private getDirs (env : ILocalFileSystem) (path : DirectoryPath) =
         //IO.Directory.GetDirectories(path)
-        env.FileSystem.GetDirectory(path).GetDirectories("*", SearchScope.Current) |> Seq.map (fun d -> d.Path |> string) |> Seq.toArray
+        if env.FileSystem.Exist(path) then
+            env.FileSystem.GetDirectory(path).GetDirectories("*", SearchScope.Current) |> Seq.map (fun d -> d.Path |> string) |> Seq.toArray
+        else failwithf "FileSystem: Failed trying to find directories in %s, as the directory it does not exist." (path.ToString())
         
-    let private getFiles (env : ILocalFileSystem) path =
+    let private getFiles (env : ILocalFileSystem) (path : DirectoryPath) =
         //IO.Directory.GetFiles(path)
-        env.FileSystem.GetDirectory(path).GetFiles("*", SearchScope.Current) |> Seq.map (fun f -> f.Path |> string) |> Seq.toArray
+        if env.FileSystem.Exist(path) then
+            env.FileSystem.GetDirectory(path).GetFiles("*", SearchScope.Current) |> Seq.map (fun f -> f.Path |> string) |> Seq.toArray
+        else failwithf "FileSystem: Failed trying to find files in %s, as the directory it does not exist." (path.ToString())
     
     let private getFileLines (file : IFile) =
-        use stream = file.OpenRead()
-        use reader = new StreamReader(stream)
-        seq {
-            while not (reader.EndOfStream) do
-                reader.ReadLine()
-        } |> Seq.toArray
+        if file.Exists then
+            use stream = file.OpenRead()
+            use reader = new StreamReader(stream)
+            seq {
+                while not (reader.EndOfStream) do
+                    reader.ReadLine()
+            } |> Seq.toArray
+        else failwithf "FileSystem: Failed trying to get lines from file %s, as the file does not exist." (file.Path.ToString())
 
     let private readLines (env : ILocalFileSystem) filePath =
         //File.ReadLines filePath
@@ -35,9 +42,11 @@ module FileSystem =
         getFileLines file
     
     let private getFileContents (file : IFile) =
-        use stream = file.OpenRead()
-        use reader = new StreamReader(stream)
-        reader.ReadToEnd()
+        if file.Exists then
+            use stream = file.OpenRead()
+            use reader = new StreamReader(stream)
+            reader.ReadToEnd()
+        else failwithf "FileSystem: Failed trying to get content from file %s, as the file does not exist." (file.Path.ToString())
         
     let loadText (env : ILocalFileSystem) filePath =
         //File.ReadAllText filePath
