@@ -68,7 +68,7 @@ module GitCommand =
             else output |> Some |> Ok
         else Error (sprintf "ERROR running 'git %s' %s %s" command Environment.NewLine err)
         
-    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" --follow %s" file
-    let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" hash
+    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" %s" file
+    let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" (String.trim hash)
     let isInGitRepo = "rev-parse --is-inside-work-tree" // true/false
     
