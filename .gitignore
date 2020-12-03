@@ -199,6 +199,9 @@ Temporary Items
 # Ignore all local history of files
 .history
 .ionide
+.dtbcache.v2
+**/*/applicationhost.config
+**/*/launchSettings.json
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,dotnetcore,fsharp,jetbrains+all,rider
 

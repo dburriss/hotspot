@@ -22,8 +22,9 @@ module GitParse =
         
     let private arrToLog splitLine = 
         match splitLine with
+        | [||] -> failwith "split Line empty"
         | [|sId;sEmail;sDate|] -> { Commit = (sId |> Commit); Author = (sEmail |> Author); Date = DateTimeOffset.Parse(sDate)}
-        | _ -> failwithf "Line did not match expected items: %A" splitLine
+        | _ -> failwithf "Line did not match expected items: %A of 3 instead found: %i" splitLine splitLine.Length
         
     let private lineToLog line =
         if String.IsNullOrWhiteSpace line then None
