@@ -102,7 +102,7 @@ module Recommend =
             let last = r.RecommendationData.History |> List.tryLast
             {|  File = FileSystem.relative report.Path file
                 LoC = r.RecommendationData.Metrics |> Metrics.loc
-                Complexity = r.RecommendationData.Metrics |> Metrics.loc
+                Complexity = r.RecommendationData.Metrics |> Metrics.complexity
                 Priority = r.RecommendationData.RelativePriority
                 Comments = r.Comments
                 Changes = r.RecommendationData.History |> List.length
@@ -123,12 +123,12 @@ module Recommend =
                 sprintf "===> %s" x.File |> TerminalPrint.text
                 printfn ""
                 sprintf "\t\tPriority : %i" x.Priority |> TerminalPrint.debug
-                sprintIfNotZero "\tChanges : %i" x.Changes |> TerminalPrint.debug
-                sprintIfSome "\tComplexity : %i" x.Complexity |> TerminalPrint.debug
-                sprintIfSome "\tLoC : %i" x.LoC |> TerminalPrint.debug
-                sprintIfNotZero "\tAuthours : %i" x.Authours |> TerminalPrint.debug
-                sprintIfSome "\tCreated : %s" (changeAuthour x.CreatedAt x.CreatedBy) |> TerminalPrint.debug
-                sprintIfSome "\tUpdated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy) |> TerminalPrint.debug
+                sprintIfNotZero " | Changes : %i" x.Changes |> TerminalPrint.debug
+                sprintIfSome " | Complexity : %i" x.Complexity |> TerminalPrint.debug
+                sprintIfSome " | LoC : %i" x.LoC |> TerminalPrint.debug
+                sprintIfNotZero " | Authours : %i" x.Authours |> TerminalPrint.debug
+                sprintIfSome " | Created : %s" (changeAuthour x.CreatedAt x.CreatedBy) |> TerminalPrint.debug
+                sprintIfSome " | Updated : %s" (changeAuthour x.LastUpdate x.LastUpdateBy) |> TerminalPrint.debug
                 printfn ""
                 x.Comments
                 |> List.iter (fun s ->
