@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4]
+### Fixed
+- Fixes unexpected Linux line ending on Windows machine (thanks Duncan @droosma for the pair programming & PR)
+- Fixes incorrect parsing of files with spaces in the filename
+
 ## [0.0.3]
 ### Removed
 - target as an option on recommend as currently not working as expected
