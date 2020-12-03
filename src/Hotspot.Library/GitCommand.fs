@@ -15,7 +15,9 @@ module GitCommand =
         elif osv.Contains("nix") then Linux
         elif String.containsAnyOf ["darwin"] osv then OSX
         else failwithf "Unknown OS found when trying to find git bin: %s" osNameAndVersion
-    let mutable git_bin : string Option = None    
+        
+    let mutable git_bin : string Option = None
+    
     let private gitBin() =
         match git_bin with
         | None ->
@@ -68,7 +70,7 @@ module GitCommand =
             else output |> Some |> Ok
         else Error (sprintf "ERROR running 'git %s' %s %s" command Environment.NewLine err)
         
-    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" %s" file
+    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" \"%s\"" file
     let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" (String.trim hash)
     let isInGitRepo = "rev-parse --is-inside-work-tree" // true/false
     
