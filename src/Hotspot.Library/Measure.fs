@@ -65,6 +65,7 @@ module Measure =
     
     open Hotspot.Helpers
     open Hotspot.Git
+    open System.Diagnostics
     
     let myMetrics env filePath =
         {
@@ -100,10 +101,12 @@ module Measure =
         |> Seq.toList |> List.map snd |> List.choose id
        
     /// Get all files with Measurements
-    let measure<'a> (deps : RepositoryDependencies<'a>) measureMetrics projectFolder (repository : Repository) =
+    let measure<'a> (deps : RepositoryDependencies<'a>) measureMetrics targetFolder (repository : Repository) =
+        let repositoryPath = repository |> Repository.path
+        Debug.WriteLine(sprintf "Measure: repository=%s | target=%s" repositoryPath targetFolder) 
         {
             Path = repository |> Repository.path
-            Project = projectFolder
+            Project = targetFolder
             CreatedAt = repository |> Repository.createdAt
             LastUpdatedAt = repository |> Repository.lastUpdatedAt
             Measurements = measureFiles deps measureMetrics repository

@@ -19,7 +19,7 @@ open Fake.Api
 
 let project = "Hotspot"
 let toolName = "hotspot"
-let summary = "Identifies hotspots in a codebase that warrant some attention"
+let summary = "Identifies hotspots in a codebase that warrant some attention. This is very much ALPHA stage software!"
 let authors = "Devon Burriss"
 let tags = "code quality metrics"
 let copyright = "Devon Burriss 2020"

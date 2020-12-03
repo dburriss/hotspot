@@ -21,14 +21,14 @@ open Argu
 
 type RecommendArgs =
     | [<AltCommandLine("-r")>] Repository_Directory of repo_dir:string
-    | [<AltCommandLine("-t")>] Target_Directory of target_dir:string
+    //| [<AltCommandLine("-t")>] Target_Directory of target_dir:string
     | Scc_File of scc_file_path:string
 
     interface IArgParserTemplate with
         member s.Usage =
             match s with
             | Repository_Directory _ -> "The root of the git repository. Default: Execution directory"
-            | Target_Directory _ -> "The directory to run analysis on. Default: <repo_dir>"
+            //| Target_Directory _ -> "The directory to run analysis on. Default: <repo_dir>"
             | Scc_File _ -> "The JSON file output of running SCC (example `scc --by-file --format json > scc_out.json`)"
             
 type HotSpotCommands =
@@ -62,9 +62,10 @@ let main argv =
         | None -> None
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
+            let repositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
             Some {
-               RepositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
-               TargetFolder = recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder)
+               RepositoryFolder = repositoryFolder
+               TargetFolder = repositoryFolder//recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder)
                SccFile = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
             }
     //---------------------------------------------------------------------------------------------------------------

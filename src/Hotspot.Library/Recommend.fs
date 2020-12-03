@@ -47,7 +47,7 @@ module Recommend =
                 
                 if(data.Metrics |> Metrics.locPredicate (fun loc -> loc > 100) && nrAuthors = 1) then 
                     if data.RelativePriority > 50 && data.RelativePriority < 80 then
-                        yield "SEVERITY: MEDIUM | Bus factor is 1 on a significant file. Make sure covered by descriptive tests & try get spread knowledge across the team."
+                        yield "SEVERITY: MEDIUM | Bus factor is 1 on a significant file. Make sure covered by descriptive tests & try to spread knowledge across the team."
                     if data.RelativePriority >= 80 then
                         yield "SEVERITY: HIGH | Bus factor is 1 on a VERY significant file. Make sure covered by descriptive tests & try pair up working on this file to prioritize knowledge transfer."
 
