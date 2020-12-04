@@ -1,9 +1,6 @@
 name: Release docs
 
-on:
-  push:
-    tags:
-    - '*'
+on: [push, pull_request]
 
 jobs:
   build:
