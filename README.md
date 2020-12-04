@@ -2,6 +2,8 @@
 
 Hotspot is a CLI tool for inspecting source code in a git repository for possible hotpots you may want to look into to decrease maintenance and potential risk.  
 
+![Run of hotspot recommend](/docs/static/images/recommend-run1.png)
+
 Support of multiple languages
 
 ## Installation
