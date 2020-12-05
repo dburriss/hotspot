@@ -90,7 +90,7 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "Test" (fun _ ->
-    exec "dotnet"  @"run --project .\tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj" "."
+    DotNet.test id  @".\tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj"
 )
 
 Target.create "Docs" (fun _ ->

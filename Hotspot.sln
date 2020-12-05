@@ -13,6 +13,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DDCA53F5
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Hotspot.UnitTests", "tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj", "{04410448-2C89-48B9-AB7A-54FAC8CBDB0C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{0B09F540-F99A-454C-8CE7-454B5136CAA7}"
+ProjectSection(SolutionItems) = preProject
+	README.md = README.md
+	global.json = global.json
+	paket.dependencies = paket.dependencies
+	build.fsx = build.fsx
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
