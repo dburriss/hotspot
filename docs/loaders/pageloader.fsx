@@ -9,5 +9,5 @@ type Shortcut = {
 
 let loader (projectRoot: string) (siteContet: SiteContents) =
     siteContet.Add({title = "Home"; link = "/"; icon = "fas fa-home"})
-    siteContet.Add({title = "GitHub repo"; link = "https://github.com/dburriss/hotspot/"; icon = "fab fa-github"})
+    siteContet.Add({title = "GitHub repo"; link = "https://devonburriss.me/hotspot"; icon = "fab fa-github"})
     siteContet
