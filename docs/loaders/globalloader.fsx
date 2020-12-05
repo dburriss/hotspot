@@ -15,7 +15,7 @@ let config = {
       #if WATCH
         "http://localhost:8080/"
       #else
-        "https://dburriss.github.io/hotspot/"
+        "https://devonburriss.me/hotspot"
       #endif
 }
 
