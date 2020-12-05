@@ -13,7 +13,7 @@ let config = {
     theme_variant = Some "red"
     root_url =
       #if WATCH
-        "http://localhost:8080/"
+        "http://localhost:8080"
       #else
         "https://devonburriss.me/hotspot"
       #endif

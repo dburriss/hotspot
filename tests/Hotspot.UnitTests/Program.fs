@@ -1,10 +1,1 @@
-﻿open System
-open Expecto
-
-[<EntryPoint>]
-let main args =
-    let allTests = testList "All Tests" [
-        SCCTests.tests
-        //ClamTests.tests
-    ]
-    runTestsWithArgs defaultConfig args allTests
+module Program = let [<EntryPoint>] main _ = 0

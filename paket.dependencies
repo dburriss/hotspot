@@ -5,9 +5,12 @@ storage: none
 framework: netcoreapp3.1, netstandard2.0, netstandard2.1
 
 nuget FSharp.Core 4.7.0
-nuget Expecto
-nuget FsCheck 2.14.0
-nuget Expecto.FsCheck
+nuget Microsoft.NET.Test.Sdk
+nuget xunit
+nuget FsCheck.Xunit
+nuget xunit.runner.visualstudio
+nuget coverlet.collector
+nuget Unquote
 nuget Spectre.IO
 nuget Spectre.IO.Testing
 nuget Spectre.Console
