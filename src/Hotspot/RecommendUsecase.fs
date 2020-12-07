@@ -2,16 +2,15 @@ namespace Hotspot
 
 open System
 open Hotspot.Helpers
+open Spectre.IO
 
 type RecommendSetting = {
     RepositoryFolder : string
-    TargetFolder : string
     SccFile : string
 }
   
 module RecommendCommand =
     open System.Diagnostics
-    let private defaultIgnoreFile env : IIgnoreFile = env :> IIgnoreFile
     
     let private terminate = function
         | Error err ->
@@ -19,37 +18,37 @@ module RecommendCommand =
             -1
         | Ok _ -> 0
         
-    let private loadSccFile env filePath =
-        FileSystem.loadText env filePath
+    let private loadSccFile fs filePath =
+        FileSystem.loadText fs filePath
 
     // Use case (default): Use LoC & print to console
-    let private sccMetrics env root ignoreFile sccFile =
+    let private sccMetrics fs root ignoreFile sccFile =
         Debug.WriteLine(sprintf "SCC file: %s" sccFile)
         sccFile
-        |> loadSccFile env
+        |> loadSccFile fs
         |> SCC.parse
-        |> SCC.toMetricsLookup root ignoreFile
+        |> SCC.toMetricsLookup root
         
     
-    let private printRecommendations env metricsF projectFolder =
-        Measure.measure (RepositoryDependencies.Live env) metricsF projectFolder
+    let private printRecommendations env metricsF =
+        Inspect.inspect metricsF
         >> Analyse.analyse 
         >> Recommend.recommend
         >> Recommend.printRecommendations
     
-    let recommendf = fun env (settings : RecommendSetting) ->
+    let recommendf = fun (fs : IFileSystem) (repository : #CodeRepository) (settings : RecommendSetting) ->
         let repositoryFolder = settings.RepositoryFolder
-        let targetFolder = settings.TargetFolder
         
         sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
-        sprintf "TARGET: %s" targetFolder |> TerminalPrint.highlight
-        let repository =  repositoryFolder |> Repository.init (RepositoryDependencies.Live env) (defaultIgnoreFile env)
+        
         let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
         if(useScc) then
             Debug.WriteLine("Metric source: SCC")
             sprintf "Metric source: SCC" |> TerminalPrint.subdued
-            repository |> Result.map (printRecommendations env (sccMetrics env repositoryFolder (defaultIgnoreFile env) settings.SccFile) targetFolder) |> terminate
+            repository |> (printRecommendations (sccMetrics fs repositoryFolder settings.SccFile)) |> ignore
+            0
         else
             Debug.WriteLine("Metric source: LoC")
             sprintf "Metric source: LoC count" |> TerminalPrint.subdued
-            repository |> Result.map (printRecommendations env (Measure.myMetrics env) targetFolder) |> terminate
+            repository |> (printRecommendations (Inspect.myMetrics)) |> ignore
+            0

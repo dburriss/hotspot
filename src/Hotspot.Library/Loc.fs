@@ -28,8 +28,8 @@ module Loc =
         t
 
 
-    let getStats env filePath =
-        let lineTypes = FileSystem.fileLineMap env inspectLine filePath |> Seq.toList
+    let getStats fileSystem filePath =
+        let lineTypes = FileSystem.fileLineMap fileSystem inspectLine filePath |> Seq.toList
         {
             Ext = FileSystem.ext filePath
             Lines = lineTypes |> List.length

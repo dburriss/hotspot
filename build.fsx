@@ -89,8 +89,12 @@ Target.create "Build" (fun _ ->
     DotNet.build id ""
 )
 
-Target.create "Test" (fun _ ->
-    DotNet.test id  @".\tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj"
+Target.create "CodeTest" (fun _ ->
+    DotNet.test (fun opt -> { opt with Filter = Some "Category!=Communication" })  @".\tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj"
+)
+
+Target.create "CommunicationTest" (fun _ ->
+    DotNet.test (fun opt -> { opt with Filter = Some "Category=Communication" })  @".\tests\Hotspot.UnitTests\Hotspot.UnitTests.fsproj"
 )
 
 Target.create "Docs" (fun _ ->
@@ -201,7 +205,7 @@ Target.create "Release" DoNothing
 
 "Clean"
   ==> "Build"
-  ==> "Test"
+  ==> "CodeTest"
   ==> "Default"
 
 "Clean"

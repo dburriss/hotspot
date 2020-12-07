@@ -2,38 +2,18 @@ namespace Hotspot
 
 open System
 open Hotspot.Helpers
-
-type RecommendationData = {
-    RelativePriority: int
-    Metrics : Metrics option
-    History : Git.Log list // TODO: 29/10/2020 dburriss@xebia.com | Make Option
-}
-
-type Recommendation = {
-    Path : string
-    Comments : string list
-    RecommendationData : RecommendationData
-}
-
-type RecommendationReport = {
-    Path : string
-    Project : ProjectFolder
-    CreatedAt : DateTimeOffset
-    LastUpdatedAt : DateTimeOffset
-    Recommendations : Map<string,Recommendation>
-}
-
-type MakeRecommendations = AnalyzedRepository -> RecommendationReport
+open Hotspot
+open Spectre.IO
 
 module Recommend =
     open Spectre.Console
     
-    let private distinctAuthors (history : Git.Log list) = history |> List.distinctBy (fun h -> h.Author)
+    let private distinctAuthors (history : History) = history |> Array.distinctBy (fun h -> h.Author)
 
     let recommendations (data : RecommendationData) =
         [
-            let nrChanges = data.History |> List.length
-            let nrAuthors = data.History |> distinctAuthors |> List.length
+            let nrChanges = data.History |> Array.length
+            let nrAuthors = data.History |> distinctAuthors |> Array.length
             // how to handle?
             // if complexity & loc
             // if only loc
@@ -65,30 +45,29 @@ module Recommend =
     let analysisRecommendation recommendations shiftPriority (analysis : Analysis) =
         let data = {
                 RelativePriority = shiftPriority analysis.PriorityScore
-                Metrics = analysis.Measurement.Metrics
-                History = analysis.Measurement.History |> Option.get
+                Metrics = analysis.InspectedFile.Metrics
+                History = analysis.InspectedFile.History |> Option.get
             }
         let recommendation = {
                 Path = analysis.Path
                 Comments = recommendations data
                 RecommendationData = data
             }
-        (analysis.Measurement.Path, recommendation)    
+        (analysis.InspectedFile.Path.Path.FullPath, recommendation) // TODO: 07/12/2020 dburriss@xebia.com | Make this return relative path
 
-    let makeRecommendationsWith analysisRecommendation (analyzedRepository : AnalyzedRepository) =
+    let makeRecommendationsWith analysisRecommendation (analyzedRepository : AnalyzedRepositoryCode) =
         //let (min,max) = analyzedRepository.Analysis |> List.map (fun a -> a.PriorityScore) |> fun xs -> (xs |> List.min, xs |> List.max)
         //let shiftPriority = Stats.shiftTo100L min max >> int
         {
             Path = analyzedRepository.Path
-            Project = analyzedRepository.Project
             CreatedAt = analyzedRepository.CreatedAt
             LastUpdatedAt = analyzedRepository.LastUpdatedAt
-            Recommendations = analyzedRepository.Analysis |> List.map analysisRecommendation |> Map.ofList
+            Recommendations = analyzedRepository.AnalyzedFiles |> List.map analysisRecommendation |> Map.ofList
         }
 
     let recommend analyzedRepo =
         // TODO: this can be done more efficiently
-        let scores = analyzedRepo.Analysis |> List.map (fun x -> x.PriorityScore) 
+        let scores = analyzedRepo.AnalyzedFiles |> List.map (fun x -> x.PriorityScore) 
         let min = scores |> List.min
         let max = scores |> List.max
 
@@ -99,15 +78,15 @@ module Recommend =
         report.Recommendations
         |> Map.toArray
         |> Array.map (fun (file, r) ->
-            let first = r.RecommendationData.History |> List.tryHead
-            let last = r.RecommendationData.History |> List.tryLast
-            {|  File = FileSystem.relative report.Path file
+            let first = r.RecommendationData.History |> Array.tryHead
+            let last = r.RecommendationData.History |> Array.tryLast
+            {|  File = FileSystem.relative report.Path.Path.FullPath file // TODO: 07/12/2020 dburriss@xebia.com | Make report.Recommendations a tuple array of IFile and then use relative path on that.
                 LoC = r.RecommendationData.Metrics |> Metrics.loc
                 Complexity = r.RecommendationData.Metrics |> Metrics.complexity
                 Priority = r.RecommendationData.RelativePriority
                 Comments = r.Comments
-                Changes = r.RecommendationData.History |> List.length
-                Authours = r.RecommendationData.History |> distinctAuthors |> List.length
+                Changes = r.RecommendationData.History |> Array.length
+                Authours = r.RecommendationData.History |> distinctAuthors |> Array.length
                 CreatedAt = first |> Option.map (fun x -> x.Date)
                 CreatedBy = first |> Option.map (fun x -> x.Author)
                 LastUpdate = last |> Option.map (fun x -> x.Date)
@@ -119,7 +98,7 @@ module Recommend =
                 let dtformat (dt : DateTimeOffset) = dt.ToLocalTime().ToString("yyyy-MM-dd")
                 let sprintIfSome t = function Some x -> (sprintf t x) | None -> ""
                 let sprintIfNotZero t i = if i > 0 then sprintf t i else ""
-                let changeAuthour dt auth = match (dt,auth) with Some d, Some (Git.Author a) -> Some (sprintf "%s (%s)" (d |> dtformat) a) | _ -> None
+                let changeAuthour dt auth = match (dt,auth) with Some d, Some a -> Some (sprintf "%s (%s)" (d |> dtformat) a) | _ -> None
 
                 sprintf "===> %s" x.File |> TerminalPrint.text
                 printfn ""

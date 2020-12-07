@@ -18,6 +18,8 @@ open System
 open Hotspot
 open Hotspot.Helpers
 open Argu
+open Spectre.IO
+open Hotspot.Git
 
 type RecommendArgs =
     | [<AltCommandLine("-r")>] Repository_Directory of repo_dir:string
@@ -41,17 +43,11 @@ type HotSpotCommands =
 
 [<EntryPoint>]
 let main argv =
-    //---------------------------------------------------------------------------------------------------------------
-    // Bootstrapping
-    //---------------------------------------------------------------------------------------------------------------
-    let env = AppEnv()
-
-    let defaultIncludeList = ["cs";"fs";]
-    let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
-    
-    //---------------------------------------------------------------------------------------------------------------
+    let environment = Environment()
+    let fs = FileSystem()
+    //------------------------------------------------------------------------------------------------------------------
     // Commands setup
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     let (|Help|_|) (result : ParseResults<HotSpotCommands>) : unit option =
         if(result.IsUsageRequested) then Some ()
         else None
@@ -63,26 +59,32 @@ let main argv =
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
             let repositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
+            
             Some {
                RepositoryFolder = repositoryFolder
-               TargetFolder = repositoryFolder//recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder)
                SccFile = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
             }
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     // Execute
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     let parser = ArgumentParser.Create<HotSpotCommands>(programName = "[dotnet] hotspot")
     try
         let result = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
         match result with
         | RecommendCommand settings ->
-            RecommendCommand.recommendf env settings
+            let root = fs.Directory.Retrieve(DirectoryPath.FromString(settings.RepositoryFolder)).Path
+            let shouldIgnore = Ignore.live None
+            let git = Git()
+            let repository = GitCodeRepository(fs, root, shouldIgnore, git)
+            RecommendCommand.recommendf fs repository settings
             |> ignore
         | _ ->
             parser.PrintUsage() |> TerminalPrint.text
         
         0
     with e ->
+        sprintf "ERROR in %s" e.TargetSite.Name |> TerminalPrint.severe
+        printfn ""
         sprintf "%s" e.Message |> TerminalPrint.severe
         printfn ""
         parser.PrintUsage() |> TerminalPrint.text

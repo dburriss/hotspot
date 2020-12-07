@@ -1,6 +1,7 @@
 namespace Hotspot
 
 open Hotspot.Helpers
+open Spectre.IO
 
 [<CLIMutable>]
 type FileLine = {
@@ -41,10 +42,13 @@ type SccLine = {
 module SCC =
     open System.Text.Json
     open System.Diagnostics
+    open Spectre.IO
+    
     let parse (json : string) =
         JsonSerializer.Deserialize<SccLine array>(json)
         
-    let toMetricsLookup root (ignoreFile : IIgnoreFile) (sccLines : SccLine array) =
+    // TODO: 07/12/2020 dburriss@xebia.com | This root needs to be the same root as scc was run at? or always repo root?
+    let toMetricsLookup root (sccLines : SccLine array) =
         let fromFileLine (x : FileLine) =
             (FileSystem.combine(root, x.Location), {
                 LoC = x.Lines |> Some
@@ -56,12 +60,10 @@ module SCC =
             sccLines
             |> Array.map (fun x -> x.Files)
             |> Array.concat
-            |> Array.filter (fun x -> x.Filename |> (ignoreFile.IgnoreFile) |> not)
             |> Array.distinctBy (fun x -> x.Location)
             |> Array.map fromFileLine
             |> Map.ofArray
         Debug.WriteLine(sprintf "SCC file count: %i" (Array.sumBy (fun x -> x.Count) sccLines))
-        Debug.WriteLine(sprintf "SCC matched after ignore: %i" lookup.Count)
         //printfn "lookup %A" lookup
         fun filePath ->
             lookup |> Map.tryFind filePath

@@ -1,29 +1,23 @@
 namespace Hotspot.Helpers
 
-open Microsoft.Extensions.Logging
 open Spectre.IO
-
-type IgnoreFile = string -> bool
-[<Interface>] type ILog<'a> = abstract Logger: ILogger<'a>
-[<Interface>] type ILocalFileSystem = abstract FileSystem: IFileSystem
-[<Interface>] type IIgnoreFile = abstract IgnoreFile: IgnoreFile
 
 module FileSystem =
     open System
     open System.IO
     open System.Diagnostics
     
-    let private getDirs (env : ILocalFileSystem) (path : DirectoryPath) =
+    let private getDirs (fs : IFileSystem) (directory : IDirectory) =
         //IO.Directory.GetDirectories(path)
-        if env.FileSystem.Exist(path) then
-            env.FileSystem.GetDirectory(path).GetDirectories("*", SearchScope.Current) |> Seq.map (fun d -> d.Path |> string) |> Seq.toArray
-        else failwithf "FileSystem: Failed trying to find directories in %s, as the directory it does not exist." (path.ToString())
+        if fs.Exist(directory.Path) then
+            fs.GetDirectory(directory.Path).GetDirectories("*", SearchScope.Current) |> Seq.toArray
+        else failwithf "FileSystem: Failed trying to find directories in %s, as the directory it does not exist." (directory.ToString())
         
-    let private getFiles (env : ILocalFileSystem) (path : DirectoryPath) =
+    let private getFiles (fs : IFileSystem) (directory : IDirectory) =
         //IO.Directory.GetFiles(path)
-        if env.FileSystem.Exist(path) then
-            env.FileSystem.GetDirectory(path).GetFiles("*", SearchScope.Current) |> Seq.map (fun f -> f.Path |> string) |> Seq.toArray
-        else failwithf "FileSystem: Failed trying to find files in %s, as the directory it does not exist." (path.ToString())
+        if fs.Exist(directory.Path) then
+            fs.GetDirectory(directory.Path).GetFiles("*", SearchScope.Current) |> Seq.toArray
+        else failwithf "FileSystem: Failed trying to find files in %s, as the directory it does not exist." (directory.ToString())
     
     let private getFileLines (file : IFile) =
         if file.Exists then
@@ -35,10 +29,10 @@ module FileSystem =
             } |> Seq.toArray
         else failwithf "FileSystem: Failed trying to get lines from file %s, as the file does not exist." (file.Path.ToString())
 
-    let private readLines (env : ILocalFileSystem) filePath =
+    let private readLines (fs : IFileSystem) filePath =
         //File.ReadLines filePath
         let filePath = FilePath filePath
-        let file = env.FileSystem.GetFile(filePath)
+        let file = fs.GetFile(filePath)
         getFileLines file
     
     let private getFileContents (file : IFile) =
@@ -48,68 +42,40 @@ module FileSystem =
             reader.ReadToEnd()
         else failwithf "FileSystem: Failed trying to get content from file %s, as the file does not exist." (file.Path.ToString())
         
-    let loadText (env : ILocalFileSystem) filePath =
+    let loadText (fs : IFileSystem) filePath =
         //File.ReadAllText filePath
         let filePath = FilePath filePath
-        let file = env.FileSystem.GetFile(filePath)
+        let file = fs.GetFile(filePath)
         getFileContents file
     let relative (relativeTo : string) (path : string) =
         IO.Path.GetRelativePath(relativeTo, path)
         //(FilePath path).GetRelativePath(DirectoryPath relativeTo)
-    let combine (path, file) = IO.Path.Combine (path, file)
+    let combine (path : string, file : string) =
+        IO.Path.Combine (path, file)
+        
     let ext filePath =
         IO.FileInfo(filePath).Extension |> String.replace "." ""
         
-    let fileLineMap (env : ILocalFileSystem)
-        f filePath = filePath |> readLines env |> Seq.map f
+    let fileLineMap (fs : IFileSystem)
+        f filePath = filePath |> readLines fs |> Seq.map f
     
-    let rec mapFiles<'a> (env : ILocalFileSystem) (f : string -> 'a) (path : string) =
-        let dirPath = DirectoryPath path
-        let dirs = dirPath |> (getDirs env)
-        let files = dirPath |> (getFiles env) |> Seq.map (fun file -> combine(path, file))
+    let rec mapFiles<'a> (fs : IFileSystem) (f : IFile -> 'a) (path : IDirectory) =
+        let dirs = path |> (getDirs fs)
+        let files = path |> (getFiles fs)
         seq {
             yield! (files |> Seq.map f)
-            yield! (Seq.collect (mapFiles env f) dirs)
+            yield! (Seq.collect (mapFiles fs f) dirs)
         }
         
-    let rec mapFiles2 (env : ILocalFileSystem) f (path : string) =
-        let dirPath = DirectoryPath path
-        let dirs = dirPath |> getDirs env
-        let files = dirPath |> getFiles env |> Seq.map (fun file -> (path, file))
+    let rec mapFiles2 (fs : IFileSystem) (f : (IFile) -> 'a) (directory : IDirectory) =
+        let dirs = directory |> getDirs fs
+        let files = directory |> getFiles fs
         seq {
             yield! (files |> Seq.map f)
-            yield! (Seq.collect (mapFiles2 env f) dirs)
+            yield! (Seq.collect (mapFiles2 fs f) dirs)
         }
     
     // for globbing check
     // https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing?view=dotnet-plat-ext-3.1
 
-module Log =
-    let live<'a> : ILogger<'a> =
-        let factory =
-            LoggerFactory.Create(
-                fun builder ->
-                    do builder.AddFilter("Microsoft", LogLevel.Warning) |> ignore
-                    do builder.AddFilter("System", LogLevel.Warning) |> ignore
-                    do builder.AddFilter("Hotspot", LogLevel.Debug) |> ignore
-                    do builder.AddConsole() |> ignore
-                    do builder.AddEventLog() |> ignore
-            )
-        factory.CreateLogger()
-        
-    let debug (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogDebug fmt
-    let info (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogInformation fmt
-    let error (env: #ILog<'a>) fmt = Printf.kprintf env.Logger.LogError fmt
-
-module Ignore =
-    let live : IgnoreFile =
-        let defaultIncludeList = ["cs";"fs";]
-        let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
-        defaultIgnoreFile
-    
-[<Struct>]
-type AppEnv<'a> = 
-    interface ILog<'a> with member _.Logger = Log.live<'a>
-    interface ILocalFileSystem with member _.FileSystem = FileSystem() :> IFileSystem
-    interface IIgnoreFile with member _.IgnoreFile = Ignore.live
         
