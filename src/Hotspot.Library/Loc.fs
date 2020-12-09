@@ -27,7 +27,10 @@ module Loc =
                 if prevWasSlash then 
                     t <- Comment
                 else prevWasSlash <- true
-            else t <- Code
+            else
+                prevWasSlash <- false
+                if t = Empty then
+                    t <- Code
         t
 
 

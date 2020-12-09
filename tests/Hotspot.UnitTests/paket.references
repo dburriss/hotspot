@@ -5,3 +5,4 @@ xunit.runner.visualstudio
 coverlet.collector
 FsCheck.Xunit
 Unquote
+Spectre.IO.Testing

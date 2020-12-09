@@ -77,7 +77,7 @@ type AnalyzedRepositoryCode = {
 type RecommendationData = {
     RelativePriority: int
     Metrics : CodeMetrics option
-    History : History // TODO: 29/10/2020 dburriss@xebia.com | Make Option
+    History : History // TODO: 29/10/2020 dburriss@xebia.com | Make Option? Empty array fine?
 }
 
 type Recommendation = {

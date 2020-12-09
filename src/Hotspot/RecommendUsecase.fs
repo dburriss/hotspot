@@ -18,7 +18,7 @@ module RecommendCommand =
     // Use case (default): Use LoC & print to console
     let private sccMetrics (fs : IFileSystem) (root : IDirectory) (sccFile : IFile) =
         SCC.loadFromFile fs sccFile
-        |> SCC.fetchMetric root
+        |> SCC.fetchMetrics root
         
     let private printRecommendations inspectFile =
         Inspect.inspect inspectFile
@@ -35,7 +35,7 @@ module RecommendCommand =
         sprintf "Metric source: SCC" |> TerminalPrint.subdued
         let scc = sccMetrics fs settings.RepositoryFolder settings.SccFile
         let loc = Loc.fetchMetrics fs
-        let metrics : FetchMetrics = Metrics.fetchMetricsOr scc loc
+        let metrics : FetchCodeMetrics = Metrics.fetchMetricsOr scc loc
         let inspectFile : InspectFile = Inspect.withMetricsAndHistory metrics (repository.GetFileHistory)
         
         printRecommendations inspectFile repository |> ignore

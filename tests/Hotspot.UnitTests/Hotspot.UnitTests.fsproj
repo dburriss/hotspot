@@ -11,8 +11,10 @@
         <Compile Include="GitCodeRepositoryTests.fs" />
         <Compile Include="IgnoreFileTests.fs" />
         <Compile Include="SCCTests.fs" />
+        <Compile Include="LocTests.fs" />
         <Compile Include="MetricsTests.fs" />
         <Compile Include="Program.fs" />
+        <Content Include="paket.references" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\Hotspot.Library\Hotspot.Library.fsproj" />

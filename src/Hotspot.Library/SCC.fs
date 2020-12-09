@@ -60,7 +60,7 @@ module SCC =
         | Some sccLines -> 
             let fromFileLine (x : FileLine) =
                 (root.Path.Combine(DirectoryPath.FromString(x.Location)).FullPath, { // TODO: 08/12/2020 dburriss@xebia.com | Make relative
-                    LoC = x.Lines |> Some
+                    LoC = x.Code |> Some
                     CyclomaticComplexity = x.Complexity |> Some
                     InheritanceDepth = None
                     Coupling = None
@@ -78,7 +78,7 @@ module SCC =
             //printfn "lookup %A" lookup
             (fun filePath -> lookup |> Map.tryFind filePath)
             
-    let fetchMetric (root : IDirectory) (sccLinesOpt : SccLine array option) : FetchCodeMetrics =
+    let fetchMetrics (root : IDirectory) (sccLinesOpt : SccLine array option) : FetchCodeMetrics =
         let lookup = toMetricsLookup root sccLinesOpt
         fun file ->
             let filePath = file.Path.FullPath // TODO: 08/12/2020 dburriss@xebia.com | Make relative

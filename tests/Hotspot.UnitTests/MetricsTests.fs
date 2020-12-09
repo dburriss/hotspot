@@ -2,18 +2,41 @@ module MetricsTests
 
 open Hotspot
 open Spectre.IO
+open Spectre.IO.Testing
 open Xunit
 open Swensen.Unquote
 
 [<Fact>]
-let ``Load``() =
-    let fileSys = FileSystem()
-    let csFile = fileSys.GetFile(FilePath "test.cs")
-    let fsFile = fileSys.GetFile(FilePath "test.fs")
-    let tsFile = fileSys.GetFile(FilePath "test.ts")
-    let shouldIgnore = Live.defaultIgnoreFile None
+let ``Loc FetchMetrics returns code metrics``() =
+    let code = """
+using System;
+// top level statements
+Console.WriteLine("Hello World!");
+"""
+    let environment = FakeEnvironment.CreateUnixEnvironment()
+    let filesystem = FakeFileSystem(environment)
+    let csFile = filesystem.CreateFile(FilePath "Program.cs").SetTextContent(code)
     
-    test <@ (shouldIgnore csFile) = false @>
-    test <@ (shouldIgnore fsFile) = false @>
-    test <@ (shouldIgnore tsFile) = false @>
+    let locOpt = Loc.getLoc filesystem csFile
+    let metricsOpt = Loc.fetchMetrics filesystem csFile
+    test <@ metricsOpt <> None @>
+    
+    let loc = locOpt |> Option.map (fun x -> x.LoC) |> Option.defaultValue 0
+    let metricsLoc = metricsOpt |> Option.map (fun x -> x.LoC |> Option.defaultValue -1) |> Option.defaultValue -1
+    test <@ metricsLoc = loc @>
+
+[<Fact>]
+let ``Scc FetchMetrics returns code metrics``() =
+    let json = """[{"Name":"F#","Bytes":67504,"CodeBytes":0,"Lines":1980,"Code":1527,"Comment":137,"Blank":316,"Complexity":115,"Count":27,"WeightedComplexity":0,"Files":[{"Language":"F#","PossibleLanguages":["F#"],"Filename":"build.fsx","Extension":"fsx","Location":"Working/build.fsx","Symlocation":"","Bytes":7106,"Lines":216,"Code":152,"Comment":25,"Blank":39,"Complexity":5,"WeightedComplexity":0,"Hash":null,"Callback":null,"Binary":false,"Minified":false,"Generated":false}]}]"""
+    let sccLines = SCC.parse json |> Some
+    let environment = FakeEnvironment.CreateUnixEnvironment()
+    let filesystem = FakeFileSystem(environment)
+    let root = filesystem.GetFakeDirectory(DirectoryPath "/")
+    let fsxFile = filesystem.CreateFile(FilePath "build.fsx")
+    let metricsOpt = SCC.fetchMetrics root sccLines fsxFile
+    let metricsLoc = metricsOpt |> Option.map (fun x -> x.LoC |> Option.defaultValue -1) |> Option.defaultValue -1
+    let metricsComplexity = metricsOpt |> Option.map (fun x -> x.CyclomaticComplexity |> Option.defaultValue -1) |> Option.defaultValue -1
+    test <@ metricsLoc = 152 @>
+    test <@ metricsComplexity = 5 @>
+
     
