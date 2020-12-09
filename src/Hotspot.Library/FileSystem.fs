@@ -29,9 +29,9 @@ module FileSystem =
             } |> Seq.toArray
         else failwithf "FileSystem: Failed trying to get lines from file %s, as the file does not exist." (file.Path.ToString())
 
-    let private readLines (fs : IFileSystem) filePath =
+    let private readLines (fs : IFileSystem) (file : IFile) =
         //File.ReadLines filePath
-        let filePath = FilePath filePath
+        let filePath = file.Path
         let file = fs.GetFile(filePath)
         getFileLines file
     
@@ -42,9 +42,9 @@ module FileSystem =
             reader.ReadToEnd()
         else failwithf "FileSystem: Failed trying to get content from file %s, as the file does not exist." (file.Path.ToString())
         
-    let loadText (fs : IFileSystem) filePath =
+    let loadText (fs : IFileSystem) (file : IFile) =
         //File.ReadAllText filePath
-        let filePath = FilePath filePath
+        let filePath = file.Path
         let file = fs.GetFile(filePath)
         getFileContents file
     let relative (relativeTo : string) (path : string) =

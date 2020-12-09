@@ -6,11 +6,12 @@
         <GenerateProgramFile>false</GenerateProgramFile>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="SCCTests.fs" />
         <Compile Include="ClamTests.fs" />
         <Compile Include="GitTests.fs" />
         <Compile Include="GitCodeRepositoryTests.fs" />
         <Compile Include="IgnoreFileTests.fs" />
+        <Compile Include="SCCTests.fs" />
+        <Compile Include="MetricsTests.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
     <ItemGroup>

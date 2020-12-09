@@ -12,7 +12,7 @@ let setupGitCodeRepo() =
     let fs = FileSystem()
     let root = fs.Directory.Retrieve(DirectoryPath ".").Path
     let git = Git()
-    let shouldIgnore = Ignore.live None
+    let shouldIgnore = Live.defaultIgnoreFile None
     GitCodeRepository(fs, root, shouldIgnore, git) :> CodeRepository
 
 [<Fact>]
@@ -21,7 +21,7 @@ let ``Root path is set``() =
     let fs = FileSystem()
     let root = fs.Directory.Retrieve(DirectoryPath ".").Path
     let git = Git()
-    let shouldIgnore = Ignore.live None
+    let shouldIgnore = Live.defaultIgnoreFile None
     let repo = GitCodeRepository(fs, root, shouldIgnore, git) :> CodeRepository
    
     test <@ repo.RootDirectory.Path.FullPath = root.FullPath @>

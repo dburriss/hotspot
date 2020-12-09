@@ -58,11 +58,13 @@ let main argv =
         | None -> None
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
-            let repositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
-            
+            let repositoryDirString = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
+            let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
+            let repositoryDir = fs.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
+            let sccFile = fs.File.Retrieve(FilePath.FromString(sccFileString))
             Some {
-               RepositoryFolder = repositoryFolder
-               SccFile = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
+               RepositoryFolder = repositoryDir
+               SccFile = sccFile
             }
     //------------------------------------------------------------------------------------------------------------------
     // Execute
@@ -72,8 +74,8 @@ let main argv =
         let result = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
         match result with
         | RecommendCommand settings ->
-            let root = fs.Directory.Retrieve(DirectoryPath.FromString(settings.RepositoryFolder)).Path
-            let shouldIgnore = Ignore.live None
+            let root = settings.RepositoryFolder.Path
+            let shouldIgnore = Live.defaultIgnoreFile None
             let git = Git()
             let repository = GitCodeRepository(fs, root, shouldIgnore, git)
             RecommendCommand.recommendf fs repository settings

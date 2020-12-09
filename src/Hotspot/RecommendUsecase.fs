@@ -5,50 +5,38 @@ open Hotspot.Helpers
 open Spectre.IO
 
 type RecommendSetting = {
-    RepositoryFolder : string
-    SccFile : string
+    RepositoryFolder : IDirectory
+    SccFile : IFile
 }
   
 module RecommendCommand =
     open System.Diagnostics
-    
-    let private terminate = function
-        | Error err ->
-            do eprintfn "%s" err
-            -1
-        | Ok _ -> 0
         
-    let private loadSccFile fs filePath =
-        FileSystem.loadText fs filePath
+    let private loadSccFile fs file =
+        FileSystem.loadText fs file
 
     // Use case (default): Use LoC & print to console
-    let private sccMetrics fs root ignoreFile sccFile =
-        Debug.WriteLine(sprintf "SCC file: %s" sccFile)
-        sccFile
-        |> loadSccFile fs
-        |> SCC.parse
-        |> SCC.toMetricsLookup root
+    let private sccMetrics (fs : IFileSystem) (root : IDirectory) (sccFile : IFile) =
+        SCC.loadFromFile fs sccFile
+        |> SCC.fetchMetric root
         
-    
-    let private printRecommendations env metricsF =
-        Inspect.inspect metricsF
+    let private printRecommendations inspectFile =
+        Inspect.inspect inspectFile
         >> Analyse.analyse 
         >> Recommend.recommend
         >> Recommend.printRecommendations
     
     let recommendf = fun (fs : IFileSystem) (repository : #CodeRepository) (settings : RecommendSetting) ->
-        let repositoryFolder = settings.RepositoryFolder
+        let repositoryFolder = settings.RepositoryFolder.Path.FullPath
         
         sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
         
-        let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
-        if(useScc) then
-            Debug.WriteLine("Metric source: SCC")
-            sprintf "Metric source: SCC" |> TerminalPrint.subdued
-            repository |> (printRecommendations (sccMetrics fs repositoryFolder settings.SccFile)) |> ignore
-            0
-        else
-            Debug.WriteLine("Metric source: LoC")
-            sprintf "Metric source: LoC count" |> TerminalPrint.subdued
-            repository |> (printRecommendations (Inspect.myMetrics)) |> ignore
-            0
+        Debug.WriteLine("Metric source: SCC")
+        sprintf "Metric source: SCC" |> TerminalPrint.subdued
+        let scc = sccMetrics fs settings.RepositoryFolder settings.SccFile
+        let loc = Loc.fetchMetrics fs
+        let metrics : FetchMetrics = Metrics.fetchMetricsOr scc loc
+        let inspectFile : InspectFile = Inspect.withMetricsAndHistory metrics (repository.GetFileHistory)
+        
+        printRecommendations inspectFile repository |> ignore
+        0

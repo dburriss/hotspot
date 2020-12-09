@@ -24,7 +24,7 @@ type Log = {
 type History = Log array
 
 /// A record with possible metrics for a file
-type Metrics = {
+type CodeMetrics = {
     LoC : int option
     CyclomaticComplexity : int option
     InheritanceDepth : int option
@@ -45,16 +45,16 @@ type CodeRepository =
 
 /// A record representing a file with metrics
 type InspectedFile = {
-    Path : IFile
+    File : IFile
     CreatedAt : DateTimeOffset option
     LastTouchedAt : DateTimeOffset option
     History : History option
-    Metrics : Metrics option
+    Metrics : CodeMetrics option
 }
 
 /// Data for a code repository 
 type InspectedRepositoryCode = {
-    Path : IDirectory
+    Directory : IDirectory
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     InspectedFiles : InspectedFile list
@@ -62,13 +62,13 @@ type InspectedRepositoryCode = {
 
 // Analyzed file with raw inspection data as well as a priority score
 type Analysis = {
-    Path : IFile
+    File : IFile
     InspectedFile : InspectedFile
     PriorityScore : int64
 }
 
 type AnalyzedRepositoryCode = {
-    Path : IDirectory
+    Directory : IDirectory
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     AnalyzedFiles : Analysis list
@@ -76,18 +76,18 @@ type AnalyzedRepositoryCode = {
 
 type RecommendationData = {
     RelativePriority: int
-    Metrics : Metrics option
+    Metrics : CodeMetrics option
     History : History // TODO: 29/10/2020 dburriss@xebia.com | Make Option
 }
 
 type Recommendation = {
-    Path : IFile
+    File : IFile
     Comments : string list
     RecommendationData : RecommendationData
 }
 
 type RecommendationReport = {
-    Path : IDirectory
+    Directory : IDirectory
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     Recommendations : Map<string,Recommendation>
@@ -96,11 +96,11 @@ type RecommendationReport = {
 //----------------------------------------------------------------------------------------------------------------------
 // STEPS: Actions that accomplish one goal
 //----------------------------------------------------------------------------------------------------------------------
-type FetchMetrics = IFile -> Metrics option
+type FetchCodeMetrics = IFile -> CodeMetrics option
 /// Represents the action of inspecting a files history (if available) and metrics (if available)
 type InspectFile = IFile -> InspectedFile option
 
-type MeasureRepository = CodeRepository -> InspectFile -> InspectedRepositoryCode
+type InspectRepository = CodeRepository -> InspectedRepositoryCode
 
 type AnalyzeRepository = InspectedRepositoryCode -> AnalyzedRepositoryCode
 
@@ -113,24 +113,34 @@ type MakeRecommendations = AnalyzedRepositoryCode -> RecommendationReport
 //----------------------------------------------------------------------------------------------------------------------
 // USE-CASES
 //----------------------------------------------------------------------------------------------------------------------
-
-// TODO: 07/12/2020 dburriss@xebia.com | Move this to a Live module
-module Ignore =
-    let live exts : IgnoreFile =
-        let defaultIncludeList = defaultArg exts ["cs";"fs";"ts"]
-        let defaultIgnoreFile (file : IFile) = defaultIncludeList |> List.contains (file.Path.GetExtension())
-        defaultIgnoreFile
-        
-module Metrics =
+       
+module CodeMetrics =
     // LoC
-    let hasLoC (metricsOpt : Metrics option) =
+    let hasLoC (metricsOpt : CodeMetrics option) =
         metricsOpt |> Option.map (fun m -> m.LoC |> Option.isSome)
         |> Option.defaultValue false
-    let loc (metricsOpt : Metrics option) = metricsOpt |> Option.bind (fun m -> m.LoC)
-    let locOrValue v (metricsOpt : Metrics option) = metricsOpt |> Option.bind (fun m -> m.LoC) |> Option.defaultValue v
-    let locPredicate predicate (metricsOpt : Metrics option) : bool =
+    let loc (metricsOpt : CodeMetrics option) = metricsOpt |> Option.bind (fun m -> m.LoC)
+    let locOrValue v (metricsOpt : CodeMetrics option) = metricsOpt |> Option.bind (fun m -> m.LoC) |> Option.defaultValue v
+    let locPredicate predicate (metricsOpt : CodeMetrics option) : bool =
         metricsOpt |> Option.bind (fun m -> m.LoC)
         |> Option.map predicate |> Option.defaultValue false
     
     // Complexity
-    let complexity (metricsOpt : Metrics option) = metricsOpt |> Option.bind (fun m -> m.CyclomaticComplexity)
+    let complexity (metricsOpt : CodeMetrics option) = metricsOpt |> Option.bind (fun m -> m.CyclomaticComplexity)
+    
+module History =
+    let createdAt (history : History) =
+        history |> Array.map (fun x -> x.Date) |> Array.sort |> Array.tryHead
+    let lastUpdatedAt (history : History) =
+        history |> Array.map (fun x -> x.Date) |> Array.sort |> Array.tryLast
+    
+// TODO: 07/12/2020 dburriss@xebia.com | Move this to a Live module
+module Live =
+
+    let defaultIgnoreFile exts : IgnoreFile =
+        let defaultIncludeList = defaultArg exts [|".cs";".fs";".ts"|]
+        let defaultIgnoreFile (file : IFile) =
+            let ext = file.Path.GetExtension()
+            let r = defaultIncludeList |> Array.contains ext |> not
+            r
+        defaultIgnoreFile

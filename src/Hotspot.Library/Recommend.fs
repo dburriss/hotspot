@@ -18,14 +18,14 @@ module Recommend =
             // if complexity & loc
             // if only loc
             // if history
-            if(data.Metrics |> Metrics.hasLoC) then
-                if data.Metrics |> Metrics.locPredicate (fun loc -> loc > 400) then 
+            if(data.Metrics |> CodeMetrics.hasLoC) then
+                if data.Metrics |> CodeMetrics.locPredicate (fun loc -> loc > 400) then 
                     if(data.RelativePriority >= 50 && nrChanges > 5) then 
-                        yield sprintf "SEVERITY: MEDIUM | This file is large at %i lines of code and changes often. It is strongly suggested you break it up to avoid conflicting changes." (data.Metrics |> Metrics.locOrValue -1)
+                        yield sprintf "SEVERITY: MEDIUM | This file is large at %i lines of code and changes often. It is strongly suggested you break it up to avoid conflicting changes." (data.Metrics |> CodeMetrics.locOrValue -1)
                     else 
-                        yield sprintf "SEVERITY: LOW | You may want to break this file up into smaller files as it is %i lines of code." (data.Metrics |> Metrics.locOrValue -1)
+                        yield sprintf "SEVERITY: LOW | You may want to break this file up into smaller files as it is %i lines of code." (data.Metrics |> CodeMetrics.locOrValue -1)
                 
-                if(data.Metrics |> Metrics.locPredicate (fun loc -> loc > 100) && nrAuthors = 1) then 
+                if(data.Metrics |> CodeMetrics.locPredicate (fun loc -> loc > 100) && nrAuthors = 1) then 
                     if data.RelativePriority > 50 && data.RelativePriority < 80 then
                         yield "SEVERITY: MEDIUM | Bus factor is 1 on a significant file. Make sure it is covered by descriptive tests & try to spread knowledge across the team."
                     if data.RelativePriority >= 80 then
@@ -43,23 +43,27 @@ module Recommend =
         ]
 
     let analysisRecommendation recommendations shiftPriority (analysis : Analysis) =
+        let history =
+            match analysis.InspectedFile.History with
+            | None -> [||]//failwithf "Unexpectedly there is no history for %s. Currently this is required for a recommendation." analysis.File.Path.FullPath
+            | Some h -> h
         let data = {
                 RelativePriority = shiftPriority analysis.PriorityScore
                 Metrics = analysis.InspectedFile.Metrics
-                History = analysis.InspectedFile.History |> Option.get
+                History = history
             }
         let recommendation = {
-                Path = analysis.Path
+                File = analysis.File
                 Comments = recommendations data
                 RecommendationData = data
             }
-        (analysis.InspectedFile.Path.Path.FullPath, recommendation) // TODO: 07/12/2020 dburriss@xebia.com | Make this return relative path
+        (analysis.InspectedFile.File.Path.FullPath, recommendation) // TODO: 07/12/2020 dburriss@xebia.com | Make this return relative path
 
     let makeRecommendationsWith analysisRecommendation (analyzedRepository : AnalyzedRepositoryCode) =
         //let (min,max) = analyzedRepository.Analysis |> List.map (fun a -> a.PriorityScore) |> fun xs -> (xs |> List.min, xs |> List.max)
         //let shiftPriority = Stats.shiftTo100L min max >> int
         {
-            Path = analyzedRepository.Path
+            Directory = analyzedRepository.Directory
             CreatedAt = analyzedRepository.CreatedAt
             LastUpdatedAt = analyzedRepository.LastUpdatedAt
             Recommendations = analyzedRepository.AnalyzedFiles |> List.map analysisRecommendation |> Map.ofList
@@ -80,9 +84,9 @@ module Recommend =
         |> Array.map (fun (file, r) ->
             let first = r.RecommendationData.History |> Array.tryHead
             let last = r.RecommendationData.History |> Array.tryLast
-            {|  File = FileSystem.relative report.Path.Path.FullPath file // TODO: 07/12/2020 dburriss@xebia.com | Make report.Recommendations a tuple array of IFile and then use relative path on that.
-                LoC = r.RecommendationData.Metrics |> Metrics.loc
-                Complexity = r.RecommendationData.Metrics |> Metrics.complexity
+            {|  File = FileSystem.relative report.Directory.Path.FullPath file // TODO: 07/12/2020 dburriss@xebia.com | Make report.Recommendations a tuple array of IFile and then use relative path on that.
+                LoC = r.RecommendationData.Metrics |> CodeMetrics.loc
+                Complexity = r.RecommendationData.Metrics |> CodeMetrics.complexity
                 Priority = r.RecommendationData.RelativePriority
                 Comments = r.Comments
                 Changes = r.RecommendationData.History |> Array.length

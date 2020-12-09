@@ -1,53 +1,30 @@
 namespace Hotspot
 
-module Measurement =
-    
-    let private get v1 v2 selector =
-        let x1 = v1 |> selector
-        let x2 = v2 |> selector
-        match (x1, x2) with
-        | Some _, _ -> x1
-        | None, Some _ -> x2
-        | None, None -> None
-
-    let zip (m1 : Metrics) (m2 : Metrics) : Metrics =
-        {
-            LoC = get m1 m2 (fun x -> x.LoC)
-            CyclomaticComplexity = get m1 m2 (fun x -> x.CyclomaticComplexity)
-            InheritanceDepth = get m1 m2 (fun x -> x.InheritanceDepth)
-            Coupling = get m1 m2 (fun x -> x.Coupling)
-        }
-
 module Inspect =
     
-    open Hotspot.Helpers
-    open Hotspot.Git
+    open Spectre.IO
     open System.Diagnostics
     
-    let myMetrics env filePath =
-        {
-            LoC = Loc.getStats env filePath |> fun x -> x.LoC |> Some
-            CyclomaticComplexity = None
-            InheritanceDepth = None
-            Coupling = None
-        } |> Some
-        
-    let private measureFiles (repository : CodeRepository) inspectFile =
+    let withMetricsAndHistory (fetchMetrics : FetchCodeMetrics) (fetchHistory : FetchHistory) (file : IFile) =
+        let metricsOpt = fetchMetrics file
+        let history = fetchHistory file
+        Some {
+            File = file
+            CreatedAt = History.createdAt history
+            LastTouchedAt = History.lastUpdatedAt history
+            History = if Array.isEmpty history then None else Some history
+            Metrics = metricsOpt
+        }
+
+    let private measureFiles (repository : CodeRepository) (inspectFile : InspectFile) =
         (repository.Choose inspectFile) |> Seq.toList
     
-    let inspect : MeasureRepository =
-        fun repository inspectFile ->
-            let repositoryPath = repository.RootDirectory.Path.FullPath
-            Debug.WriteLine(sprintf "Measure: repository=%s" repositoryPath) 
+    let inspect inspectFile : InspectRepository =
+        fun repository ->
+            Debug.WriteLine(sprintf "Inspect: repository=%s" repository.RootDirectory.Path.FullPath) 
             {
-                Path = repository.RootDirectory
+                Directory = repository.RootDirectory
                 CreatedAt = repository.CreatedAt()
                 LastUpdatedAt = repository.LastUpdatedAt()
                 InspectedFiles = measureFiles repository inspectFile 
-            }
-    
-    // TODO: 07/12/2020 dburriss@xebia.com | Move to a live module
-//    module Live =
-//        let inspectFile : InspectFile =
-//            fun file ->
-//                
+            }            
