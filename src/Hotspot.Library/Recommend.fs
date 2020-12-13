@@ -3,10 +3,8 @@ namespace Hotspot
 open System
 open Hotspot.Helpers
 open Hotspot
-open Spectre.IO
 
 module Recommend =
-    open Spectre.Console
     
     let private distinctAuthors (history : History) = history |> Array.distinctBy (fun h -> h.Author)
 
@@ -42,7 +40,7 @@ module Recommend =
         
         ]
 
-    let analysisRecommendation recommendations shiftPriority (analysis : Analysis) =
+    let analysisRecommendation shiftPriority recommendations  (analysis : Analysis) =
         let history =
             match analysis.InspectedFile.History with
             | None -> [||]//failwithf "Unexpectedly there is no history for %s. Currently this is required for a recommendation." analysis.File.Path.FullPath
@@ -75,7 +73,7 @@ module Recommend =
         let min = scores |> List.min
         let max = scores |> List.max
 
-        makeRecommendationsWith (analysisRecommendation recommendations (Stats.shiftTo100L min max >> int)) analyzedRepo
+        makeRecommendationsWith (analysisRecommendation (Stats.shiftTo100L min max >> int) recommendations) analyzedRepo
         
     let printRecommendations report =
         

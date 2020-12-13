@@ -22,7 +22,7 @@
         <Compile Include="Metrics.fs" />
         <Compile Include="Inspect.fs" />
         <Compile Include="Stats.fs" />
-        <Compile Include="Analyse.fs" />
+        <Compile Include="Analyzer.fs" />
         <Compile Include="Recommend.fs" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />

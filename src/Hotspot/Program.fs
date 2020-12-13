@@ -9,14 +9,12 @@ This executes the default command which is **recommend**. It is the equivalent o
 
 Note: `console` is also the default if no `--output` is provided.
 
--r|--repository-folder <REPOSITORY>
--t|--target-folder <TARGET>
+-r|--repository-directory <REPOSITORY>
 --scc-file <SCC>
 *)
 
 open System
 open Hotspot
-open Hotspot.Helpers
 open Argu
 open Spectre.IO
 open Hotspot.Git
@@ -59,9 +57,9 @@ let main argv =
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
             let repositoryDirString = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
-            let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
             let repositoryDir = fs.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
-            let sccFile = fs.File.Retrieve(FilePath.FromString(sccFileString))
+            let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
+            let sccFile = if String.IsNullOrEmpty sccFileString then None else Some (fs.File.Retrieve(FilePath.FromString(sccFileString)))
             Some {
                RepositoryFolder = repositoryDir
                SccFile = sccFile

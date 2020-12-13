@@ -6,7 +6,7 @@ open Spectre.IO
 
 type RecommendSetting = {
     RepositoryFolder : IDirectory
-    SccFile : IFile
+    SccFile : IFile option
 }
   
 module RecommendCommand =
@@ -22,7 +22,7 @@ module RecommendCommand =
         
     let private printRecommendations inspectFile =
         Inspect.inspect inspectFile
-        >> Analyse.analyse 
+        >> Analyzer.analyze 
         >> Recommend.recommend
         >> Recommend.printRecommendations
     
@@ -33,7 +33,10 @@ module RecommendCommand =
         
         Debug.WriteLine("Metric source: SCC")
         sprintf "Metric source: SCC" |> TerminalPrint.subdued
-        let scc = sccMetrics fs settings.RepositoryFolder settings.SccFile
+        let scc =
+            if Option.isSome settings.SccFile then
+                sccMetrics fs settings.RepositoryFolder settings.SccFile.Value
+            else fun (_ : IFile) -> None
         let loc = Loc.fetchMetrics fs
         let metrics : FetchCodeMetrics = Metrics.fetchMetricsOr scc loc
         let inspectFile : InspectFile = Inspect.withMetricsAndHistory metrics (repository.GetFileHistory)

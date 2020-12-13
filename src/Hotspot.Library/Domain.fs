@@ -133,6 +133,32 @@ module History =
         history |> Array.map (fun x -> x.Date) |> Array.sort |> Array.tryHead
     let lastUpdatedAt (history : History) =
         history |> Array.map (fun x -> x.Date) |> Array.sort |> Array.tryLast
+        
+module Analysis =
+    let calcPriorityFromHistory calculateCoeffiecient (createdAt, lastUpdatedAt) (data : InspectedFile) =
+        let calcCoeff = calculateCoeffiecient createdAt lastUpdatedAt
+        let multiplierNumber =
+            match (data.Metrics) with
+            | None -> 1L
+            | Some m -> m.CyclomaticComplexity |> Option.defaultWith (fun () -> m.LoC |> Option.defaultValue 1) |> int64
+            
+        let multiplier coeff = coeff * multiplierNumber//(data.LoC |> Option.get |> int64) // We want to do on cyclomatic complexity rather than LoC
+        let touchScores = 
+            data.History 
+            |> Option.map (Array.map (fun log -> log.Date |> calcCoeff))
+            |> Option.map (Array.sumBy multiplier)
+        touchScores    
+
+    let analyzeFile priorityCalculator (inspectedFile : InspectedFile) =
+        let priority =
+            match priorityCalculator inspectedFile with
+            | None -> 0L//failwithf "Unexpectedly there was no priority calculated for %s" data.File.Path.FullPath
+            | Some p -> p
+        {
+            File = inspectedFile.File
+            InspectedFile = inspectedFile
+            PriorityScore = priority
+        }
     
 // TODO: 07/12/2020 dburriss@xebia.com | Move this to a Live module
 module Live =
