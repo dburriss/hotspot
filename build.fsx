@@ -151,7 +151,6 @@ Target.create "ReleaseGitHub" (fun _ ->
     Git.Commit.exec "" (sprintf "Bump version to %s" nugetVersion)
     Git.Branches.pushBranch "" remote (Git.Information.getBranchName "")
 
-
     Git.Branches.tag "" nugetVersion
     Git.Branches.pushTag "" remote nugetVersion
 
@@ -168,8 +167,6 @@ Target.create "ReleaseGitHub" (fun _ ->
         // Git.createClient user pw
         GitHub.createClient user pw
     let files = !! (nugetDir </> "*.nupkg")
-
-
 
     // release on github
     let cl =
