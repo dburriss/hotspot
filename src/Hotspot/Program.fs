@@ -42,7 +42,7 @@ type HotSpotCommands =
 [<EntryPoint>]
 let main argv =
     let environment = Environment()
-    let fs = FileSystem()
+    let fileSystem = FileSystem()
     //------------------------------------------------------------------------------------------------------------------
     // Commands setup
     //------------------------------------------------------------------------------------------------------------------
@@ -57,9 +57,9 @@ let main argv =
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
             let repositoryDirString = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
-            let repositoryDir = fs.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
+            let repositoryDir = fileSystem.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
             let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
-            let sccFile = if String.IsNullOrEmpty sccFileString then None else Some (fs.File.Retrieve(FilePath.FromString(sccFileString)))
+            let sccFile = if String.IsNullOrEmpty sccFileString then None else Some (fileSystem.File.Retrieve(FilePath.FromString(sccFileString)))
             Some {
                RepositoryFolder = repositoryDir
                SccFile = sccFile
@@ -74,9 +74,12 @@ let main argv =
         | RecommendCommand settings ->
             let root = settings.RepositoryFolder.Path
             let shouldIgnore = Live.defaultIgnoreFile None
-            let git = Git()
-            let repository = GitCodeRepository(fs, root, shouldIgnore, git)
-            RecommendCommand.recommendf fs repository settings
+            let recommendationsCmd = {
+                FileSystem = fileSystem;
+                CodeRepository = GitCodeRepository(fileSystem, root, shouldIgnore, Git());
+                Settings = settings
+            }
+            RecommendUsecase.recommend recommendationsCmd
             |> ignore
         | _ ->
             parser.PrintUsage() |> TerminalPrint.text

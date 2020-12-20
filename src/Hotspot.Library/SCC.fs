@@ -1,5 +1,5 @@
 namespace Hotspot
-
+// TODO: 20/12/2020 dburriss@xebia.com | Change SCC to class-oriented programming
 [<CLIMutable>]
 type FileLine = {
     Extension : string
@@ -42,7 +42,6 @@ module SCC =
     open Spectre.IO
     open Hotspot.Helpers
         
-    
     let parse (json : string) =
         JsonSerializer.Deserialize<SccLine array>(json)
         

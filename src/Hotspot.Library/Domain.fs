@@ -149,9 +149,9 @@ module Analysis =
             |> Option.map (Array.sumBy multiplier)
         touchScores    
 
-    let analyzeFile priorityCalculator (inspectedFile : InspectedFile) =
+    let prioritize scoreCalculator (inspectedFile : InspectedFile) =
         let priority =
-            match priorityCalculator inspectedFile with
+            match scoreCalculator inspectedFile with
             | None -> 0L//failwithf "Unexpectedly there was no priority calculated for %s" data.File.Path.FullPath
             | Some p -> p
         {

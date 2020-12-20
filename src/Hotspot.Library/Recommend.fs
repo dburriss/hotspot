@@ -73,7 +73,7 @@ module Recommend =
         let min = scores |> List.min
         let max = scores |> List.max
 
-        makeRecommendationsWith (analysisRecommendation (Stats.shiftTo100L min max >> int) recommendations) analyzedRepo
+        makeRecommendationsWith (analysisRecommendation (Maths.shiftTo100L min max >> int) recommendations) analyzedRepo
         
     let printRecommendations report =
         

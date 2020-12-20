@@ -10,6 +10,7 @@
         <Compile Include="App.fs" />
         <Compile Include="String.fs" />
         <Compile Include="Result.fs" />
+        <Compile Include="Maths.fs" />
         <Compile Include="TerminalPrint.fs" />
         <Compile Include="FileSystem.fs" />
         <Compile Include="GitCommand.fs" />
@@ -21,7 +22,7 @@
         <Compile Include="SCC.fs" />
         <Compile Include="Metrics.fs" />
         <Compile Include="Inspect.fs" />
-        <Compile Include="Stats.fs" />
+        <Compile Include="Weighting.fs" />
         <Compile Include="Analyzer.fs" />
         <Compile Include="Recommend.fs" />
     </ItemGroup>
