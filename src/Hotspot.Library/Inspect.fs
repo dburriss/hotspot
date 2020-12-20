@@ -9,7 +9,7 @@ module Inspect =
         let metricsOpt = fetchMetrics file
         let history = fetchHistory file
         Some {
-            File = file
+            File = file.Path
             CreatedAt = History.createdAt history
             LastTouchedAt = History.lastUpdatedAt history
             History = if Array.isEmpty history then None else Some history
@@ -23,7 +23,7 @@ module Inspect =
         fun repository ->
             Debug.WriteLine(sprintf "Inspect: repository=%s" repository.RootDirectory.Path.FullPath) 
             {
-                Directory = repository.RootDirectory
+                Directory = repository.RootDirectory.Path
                 CreatedAt = repository.CreatedAt()
                 LastUpdatedAt = repository.LastUpdatedAt()
                 InspectedFiles = measureFiles repository inspectFile 

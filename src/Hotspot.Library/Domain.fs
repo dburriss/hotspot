@@ -45,7 +45,7 @@ type CodeRepository =
 
 /// A record representing a file with metrics
 type InspectedFile = {
-    File : IFile
+    File : FilePath
     CreatedAt : DateTimeOffset option
     LastTouchedAt : DateTimeOffset option
     History : History option
@@ -54,7 +54,7 @@ type InspectedFile = {
 
 /// Data for a code repository 
 type InspectedRepositoryCode = {
-    Directory : IDirectory
+    Directory : DirectoryPath
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     InspectedFiles : InspectedFile list
@@ -62,13 +62,13 @@ type InspectedRepositoryCode = {
 
 // Analyzed file with raw inspection data as well as a priority score
 type Analysis = {
-    File : IFile
+    File : FilePath
     InspectedFile : InspectedFile
     PriorityScore : int64
 }
 
 type AnalyzedRepositoryCode = {
-    Directory : IDirectory
+    Directory : DirectoryPath
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     AnalyzedFiles : Analysis list
@@ -81,13 +81,13 @@ type RecommendationData = {
 }
 
 type Recommendation = {
-    File : IFile
+    File : FilePath
     Comments : string list
     RecommendationData : RecommendationData
 }
 
 type RecommendationReport = {
-    Directory : IDirectory
+    Directory : DirectoryPath
     CreatedAt : DateTimeOffset
     LastUpdatedAt : DateTimeOffset
     Recommendations : Map<string,Recommendation>

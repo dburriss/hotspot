@@ -55,7 +55,7 @@ module Recommend =
                 Comments = recommendations data
                 RecommendationData = data
             }
-        (analysis.InspectedFile.File.Path.FullPath, recommendation) // TODO: 07/12/2020 dburriss@xebia.com | Make this return relative path
+        (analysis.InspectedFile.File.FullPath, recommendation) // TODO: 07/12/2020 dburriss@xebia.com | Make this return relative path
 
     let makeRecommendationsWith analysisRecommendation (analyzedRepository : AnalyzedRepositoryCode) =
         //let (min,max) = analyzedRepository.Analysis |> List.map (fun a -> a.PriorityScore) |> fun xs -> (xs |> List.min, xs |> List.max)
@@ -82,7 +82,7 @@ module Recommend =
         |> Array.map (fun (file, r) ->
             let first = r.RecommendationData.History |> Array.tryHead
             let last = r.RecommendationData.History |> Array.tryLast
-            {|  File = FileSystem.relative report.Directory.Path.FullPath file // TODO: 07/12/2020 dburriss@xebia.com | Make report.Recommendations a tuple array of IFile and then use relative path on that.
+            {|  File = FileSystem.relative report.Directory.FullPath file // TODO: 07/12/2020 dburriss@xebia.com | Make report.Recommendations a tuple array of IFile and then use relative path on that.
                 LoC = r.RecommendationData.Metrics |> CodeMetrics.loc
                 Complexity = r.RecommendationData.Metrics |> CodeMetrics.complexity
                 Priority = r.RecommendationData.RelativePriority
