@@ -21,7 +21,7 @@
         <Compile Include="Loc.fs" />
         <Compile Include="SCC.fs" />
         <Compile Include="Metrics.fs" />
-        <Compile Include="Inspect.fs" />
+        <Compile Include="Inspector.fs" />
         <Compile Include="Weighting.fs" />
         <Compile Include="Analyzer.fs" />
         <Compile Include="Recommend.fs" />

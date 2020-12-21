@@ -29,7 +29,7 @@ module RecommendUsecase =
         else fun (_ : IFile) -> None
         
     let private printRecommendations inspectFile =
-        Inspect.inspect inspectFile
+        Inspector.inspect inspectFile
         >> Analyzer.analyze 
         >> Recommend.recommend
         >> Recommend.printRecommendations

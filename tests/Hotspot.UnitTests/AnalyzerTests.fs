@@ -24,7 +24,6 @@ let ``analyzing inspected repository with no files results in analyzed repo with
 
 [<Fact>]
 let ``analyzing inspected repository with 1 inspected file with no metrics and no history results in no analysis``() =
-    let fs = FakeFileSystem(FakeEnvironment.CreateUnixEnvironment())
     let inspectedFile1 : InspectedFile = {
         File = FilePath "Program.cs"
         CreatedAt = Some A.Date.today
