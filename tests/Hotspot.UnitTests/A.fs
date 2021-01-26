@@ -100,3 +100,21 @@ module A =
         let ofYesterday = DateTimeOffset.UtcNow - aDay
         let today = DateTimeOffset.UtcNow
         
+    module InspectedRepositoryCode =
+        let withFiles (files : InspectedFile list) =
+            let folderM map =
+                fun dt (file : InspectedFile)  ->
+                    if (map file) < dt then (map file)
+                    else dt
+            let mapCreated (f : InspectedFile) = (f.CreatedAt |> Option.defaultValue (Date.today))
+            let mapUpdated (f : InspectedFile) = (f.LastTouchedAt |> Option.defaultValue (Date.today))
+            let createdAt = files |> List.fold (folderM mapCreated) (Date.today)
+            let updatedAt = files |> List.fold (folderM mapUpdated) (Date.today)
+            let inspectedRepositoryCode : InspectedRepositoryCode = {
+                Directory = DirectoryPath "/"
+                CreatedAt = createdAt
+                LastUpdatedAt = updatedAt
+                InspectedFiles = files
+            }
+            inspectedRepositoryCode
+        

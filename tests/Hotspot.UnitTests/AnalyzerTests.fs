@@ -7,7 +7,7 @@ open Xunit
 open Swensen.Unquote
 
 [<Fact>]
-let ``analyzing inspected repository with no files results in analyzed repo with no files``() =
+let ``analyzing inspected repository has inspectedRepositoryCode dates``() =
     let inspectedRepositoryCode : InspectedRepositoryCode = {
         Directory = DirectoryPath "/"
         CreatedAt = A.Date.ofYesterday
@@ -20,6 +20,18 @@ let ``analyzing inspected repository with no files results in analyzed repo with
     test <@ analyzedRepo.CreatedAt = inspectedRepositoryCode.CreatedAt @>
     test <@ analyzedRepo.LastUpdatedAt = inspectedRepositoryCode.LastUpdatedAt @>
     test <@ analyzedRepo.Directory = inspectedRepositoryCode.Directory @>
+
+[<Fact>]
+let ``analyzing inspected repository with no files results in analyzed repo with no files``() =
+    let inspectedRepositoryCode : InspectedRepositoryCode = {
+        Directory = DirectoryPath "/"
+        CreatedAt = A.Date.ofYesterday
+        LastUpdatedAt = A.Date.today
+        InspectedFiles = []
+    }
+    
+    let analyzedRepo = Analyzer.analyze inspectedRepositoryCode
+    
     test <@ analyzedRepo.AnalyzedFiles = [] @>
 
 [<Fact>]
@@ -40,7 +52,48 @@ let ``analyzing inspected repository with 1 inspected file with no metrics and n
     
     let analyzedRepo = Analyzer.analyze inspectedRepositoryCode
     
-    test <@ analyzedRepo.CreatedAt = inspectedRepositoryCode.CreatedAt @>
-    test <@ analyzedRepo.LastUpdatedAt = inspectedRepositoryCode.LastUpdatedAt @>
-    test <@ analyzedRepo.Directory = inspectedRepositoryCode.Directory @>
     test <@ analyzedRepo.AnalyzedFiles = [] @>
+
+[<Fact>]
+let ``analyzing inspected repository with 1 inspected file with metrics and no history results in a analysis``() =
+    let inspectedFile1 : InspectedFile = {
+        File = FilePath "Program.cs"
+        CreatedAt = Some A.Date.today
+        LastTouchedAt = Some A.Date.today
+        History = None
+        Metrics = Some( { LoC = Some 10; CyclomaticComplexity = Some 10; InheritanceDepth = Some 0; Coupling = Some 1 } )
+    } 
+    let inspectedRepositoryCode = A.InspectedRepositoryCode.withFiles [inspectedFile1]
+    
+    let analyzedRepo = Analyzer.analyze inspectedRepositoryCode
+    
+    test <@ analyzedRepo.AnalyzedFiles.Length = 1 @>
+
+[<Fact>]
+let ``analyzing 2 files the one with higher LoC has higher priority``() =
+    
+    let getFile name analyzedRepo =
+        analyzedRepo.AnalyzedFiles |> List.find (fun f -> f.File.GetFilename().ToString() = name)
+    
+    let inspectedFile1 : InspectedFile = {
+        File = FilePath "Program.cs"
+        CreatedAt = Some A.Date.today
+        LastTouchedAt = Some A.Date.today
+        History = None
+        Metrics = Some( { LoC = Some 10; CyclomaticComplexity = None; InheritanceDepth = None; Coupling = None } )
+    }
+    let inspectedFile2 : InspectedFile = {
+        File = FilePath "Data.cs"
+        CreatedAt = Some A.Date.today
+        LastTouchedAt = Some A.Date.today
+        History = None
+        Metrics = Some( { LoC = Some 100; CyclomaticComplexity = None; InheritanceDepth = None; Coupling = None } )
+    } 
+    let inspectedRepositoryCode = A.InspectedRepositoryCode.withFiles [inspectedFile1; inspectedFile2]
+    
+    let analyzedRepo = Analyzer.analyze inspectedRepositoryCode
+    
+    let programFileAnalysis = getFile "Program.cs" analyzedRepo
+    let dataFileAnalysis = getFile "Data.cs" analyzedRepo
+    
+    test <@ programFileAnalysis.PriorityScore < dataFileAnalysis.PriorityScore @>
