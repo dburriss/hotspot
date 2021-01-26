@@ -13,7 +13,7 @@ let ``default ignore excludes .cs, .fs, .ts``() =
     let tsFile = fileSys.GetFile(FilePath "test.ts")
     let sqlFile = fileSys.GetFile(FilePath "test.sql")
     let dllFile = fileSys.GetFile(FilePath "test.dll")
-    let shouldIgnore = Live.defaultIgnoreFile None
+    let shouldIgnore = Live.ignoreAllBut None
     
     test <@ (shouldIgnore csFile) = false @>
     test <@ (shouldIgnore fsFile) = false @>

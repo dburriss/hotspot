@@ -165,7 +165,7 @@ module Analysis =
 // TODO: 07/12/2020 dburriss@xebia.com | Move this to a Live module
 module Live =
 
-    let defaultIgnoreFile exts : IgnoreFile =
+    let ignoreAllBut exts : IgnoreFile =
         let defaultIncludeList = defaultArg exts [|".cs";".fs";".ts"|]
         let defaultIgnoreFile (file : IFile) =
             let ext = file.Path.GetExtension()

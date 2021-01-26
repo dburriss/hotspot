@@ -73,7 +73,7 @@ let main argv =
         match result with
         | RecommendCommand settings ->
             let root = settings.RepositoryFolder.Path
-            let shouldIgnore = Live.defaultIgnoreFile None
+            let shouldIgnore = Live.ignoreAllBut None
             let recommendationsCmd = {
                 FileSystem = fileSystem;
                 CodeRepository = GitCodeRepository(fileSystem, root, shouldIgnore, Git());

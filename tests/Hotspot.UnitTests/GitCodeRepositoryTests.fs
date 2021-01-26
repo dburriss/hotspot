@@ -12,7 +12,13 @@ let setupGitCodeRepo() =
     let fs = FileSystem()
     let root = fs.Directory.Retrieve(DirectoryPath ".").Path
     let git = Git()
-    let shouldIgnore = Live.defaultIgnoreFile None
+    let shouldIgnore = Live.ignoreAllBut None
+    GitCodeRepository(fs, root, shouldIgnore, git) :> CodeRepository
+    
+let setupGitCodeRepoWithIgnore(shouldIgnore) =
+    let fs = FileSystem()
+    let root = fs.Directory.Retrieve(DirectoryPath ".").Path
+    let git = Git()
     GitCodeRepository(fs, root, shouldIgnore, git) :> CodeRepository
 
 [<Fact>]
@@ -21,7 +27,7 @@ let ``Root path is set``() =
     let fs = FileSystem()
     let root = fs.Directory.Retrieve(DirectoryPath ".").Path
     let git = Git()
-    let shouldIgnore = Live.defaultIgnoreFile None
+    let shouldIgnore = Live.ignoreAllBut None
     let repo = GitCodeRepository(fs, root, shouldIgnore, git) :> CodeRepository
    
     test <@ repo.RootDirectory.Path.FullPath = root.FullPath @>
@@ -41,9 +47,10 @@ let ``HasHistory is true``() =
 [<Fact>]
 [<Trait("Category","Communication")>]
 let ``Choose files in bin confirms some are DLLs``() =
-    let repo = setupGitCodeRepo()
+    let ignoreF : IgnoreFile = Live.ignoreAllBut (Some [|".dll"|])
+    let repo = setupGitCodeRepoWithIgnore(ignoreF)
     let isDll (file : IFile) = Some (file.Path.GetExtension() = ".dll") // as test runs in bin
     let values = repo.Choose isDll
-    let checkFSharp = values |> Seq.exists id
-    test <@ checkFSharp = true @>
+    let exists = values |> Seq.isEmpty |> not
+    test <@ exists = true @>
     
