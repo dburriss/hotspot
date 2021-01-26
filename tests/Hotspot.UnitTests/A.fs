@@ -81,7 +81,7 @@ type FakeCodeRepository(shouldIgnore) =
                         Coupling = None
                     }
                 else None
-            Some {
+            {
                 File = FilePath name
                 CreatedAt = Some createdAt
                 LastTouchedAt = Some lastTouchedAt
@@ -93,7 +93,7 @@ module A =
     open System
 
     let emptyFileInspector : InspectFile =
-        fun file -> InspectedFileBuilder(file.Path.FullPath).Build()
+        fun file -> InspectedFileBuilder(file.Path.FullPath).Build() |> Some
     
     module Date =
         let aDay = TimeSpan.FromHours 24.0

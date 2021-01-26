@@ -35,7 +35,7 @@ let ``inspect code repository with matching file returns 1 inspected files``() =
     let shouldIgnore : IgnoreFile = fun file -> file.Path.GetExtension().ToLower() <> ".cs"
     let fakeRepo = FakeCodeRepository(shouldIgnore).AddFile("Program.cs")
 
-    let fileInspectorGivesLoc = fun (file : IFile) -> InspectedFileBuilder(file.Path.FullPath).WithLoc(loc).Build()
+    let fileInspectorGivesLoc = fun (file : IFile) -> InspectedFileBuilder(file.Path.FullPath).WithLoc(loc).Build() |> Some
     
     let repo = fakeRepo :> CodeRepository
     let inspectedRepo = Inspector.inspect fileInspectorGivesLoc repo
