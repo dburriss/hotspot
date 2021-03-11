@@ -29,12 +29,14 @@ module Analyzer =
             LastUpdatedAt = repository.LastUpdatedAt
             AnalyzedFiles = repository.InspectedFiles |> List.filter filter |> List.map analyze
         }
+        
+    let defaultStrategy (repository : InspectedRepositoryCode) =
+        // TODO: we actually only care about the dates...
+        let priorityCalculator = Analysis.calcPriorityFromHistory (Weighting.calculate) (repository.CreatedAt, repository.LastUpdatedAt)
+        Analysis.prioritize priorityCalculator
 
     /// Perform analysis on the `InspectedRepositoryCode` using `Analysis.calcPriorityFromHistory`.
     /// If a file contains no metrics or history, no analysis is given for file.
     let analyze (repository : InspectedRepositoryCode) =
-        let priorityCalculator = Analysis.calcPriorityFromHistory (Weighting.calculate) (repository.CreatedAt, repository.LastUpdatedAt)
-        let analyzeFile = Analysis.prioritize priorityCalculator
-        let performAnalysis = analyzeFile
-        performAnalysisWith performAnalysis repository
+        performAnalysisWith (defaultStrategy repository) repository
         

@@ -30,7 +30,7 @@ module RecommendUsecase =
         
     let private printRecommendations inspectFile =
         Inspector.inspect inspectFile
-        >> Analyzer.analyze 
+        >> Analyzer.analyze
         >> Recommend.recommend
         >> Recommend.printRecommendations
     

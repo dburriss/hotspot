@@ -104,7 +104,7 @@ module Recommend =
 
                 sprintf "===> %s" x.File |> TerminalPrint.text
                 printfn ""
-                sprintf "\t\tPriority : %i" x.Priority |> TerminalPrint.debug
+                sprintf "\tPriority : %i" x.Priority |> TerminalPrint.debug
                 sprintIfNotZero " | Changes : %i" x.Changes |> TerminalPrint.debug
                 sprintIfSome " | Complexity : %i" x.Complexity |> TerminalPrint.debug
                 sprintIfSome " | LoC : %i" x.LoC |> TerminalPrint.debug
@@ -115,13 +115,13 @@ module Recommend =
                 x.Comments
                 |> List.iter (fun s ->
                                 if s.StartsWith("SEVERITY: HIGH") then
-                                    sprintf "\t%s" s |> TerminalPrint.severe
+                                    sprintf "\t\t%s" s |> TerminalPrint.severe
                                     printfn ""
                                 elif s.StartsWith("SEVERITY: MEDIUM") then
-                                    sprintf "\t%s" s |> TerminalPrint.warning
+                                    sprintf "\t\t%s" s |> TerminalPrint.warning
                                     printfn ""
                                 else
-                                    sprintf "\t%s" s |> TerminalPrint.info
+                                    sprintf "\t\t%s" s |> TerminalPrint.info
                                     printfn ""
                              )
         )
