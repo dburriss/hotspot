@@ -2,54 +2,51 @@ namespace Hotspot
 
 open System
 open Hotspot.Helpers
+open Spectre.IO
 
 type RecommendSetting = {
-    RepositoryFolder : string
-    TargetFolder : string
-    SccFile : string
+    RepositoryFolder : IDirectory
+    SccFile : IFile option
+}
+
+type RecommendationsCmd = {
+    FileSystem : IFileSystem
+    CodeRepository : CodeRepository
+    Settings : RecommendSetting
 }
   
-module RecommendCommand =
+module RecommendUsecase =
     open System.Diagnostics
-    let private defaultIgnoreFile env : IIgnoreFile = env :> IIgnoreFile
-    
-    let private terminate = function
-        | Error err ->
-            do eprintfn "%s" err
-            -1
-        | Ok _ -> 0
         
-    let private loadSccFile env filePath =
-        FileSystem.loadText env filePath
+    let private loadSccFile fs file =
+        FileSystem.loadText fs file
 
     // Use case (default): Use LoC & print to console
-    let private sccMetrics env root ignoreFile sccFile =
-        Debug.WriteLine(sprintf "SCC file: %s" sccFile)
-        sccFile
-        |> loadSccFile env
-        |> SCC.parse
-        |> SCC.toMetricsLookup root ignoreFile
+    let private sccMetrics (fs : IFileSystem) (root : IDirectory) (sccFile : IFile option) =
+        if Option.isSome sccFile then
+            SCC.loadFromFile fs sccFile.Value
+            |> SCC.fetchMetrics root
+        else fun (_ : IFile) -> None
         
-    
-    let private printRecommendations env metricsF projectFolder =
-        Measure.measure (RepositoryDependencies.Live env) metricsF projectFolder
-        >> Analyse.analyse 
+    let private printRecommendations inspectFile =
+        Inspector.inspect inspectFile
+        >> Analyzer.analyze
         >> Recommend.recommend
         >> Recommend.printRecommendations
     
-    let recommendf = fun env (settings : RecommendSetting) ->
-        let repositoryFolder = settings.RepositoryFolder
-        let targetFolder = settings.TargetFolder
-        
-        sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
-        sprintf "TARGET: %s" targetFolder |> TerminalPrint.highlight
-        let repository =  repositoryFolder |> Repository.init (RepositoryDependencies.Live env) (defaultIgnoreFile env)
-        let useScc = settings.SccFile |> String.IsNullOrEmpty |> not
-        if(useScc) then
+    let recommend (cmd : RecommendationsCmd) =
+        let recommendf = fun (fs : IFileSystem) (repository : #CodeRepository) (settings : RecommendSetting) ->
+            let repositoryFolder = settings.RepositoryFolder.Path.FullPath
+            
+            sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
+            
             Debug.WriteLine("Metric source: SCC")
             sprintf "Metric source: SCC" |> TerminalPrint.subdued
-            repository |> Result.map (printRecommendations env (sccMetrics env repositoryFolder (defaultIgnoreFile env) settings.SccFile) targetFolder) |> terminate
-        else
-            Debug.WriteLine("Metric source: LoC")
-            sprintf "Metric source: LoC count" |> TerminalPrint.subdued
-            repository |> Result.map (printRecommendations env (Measure.myMetrics env) targetFolder) |> terminate
+            let scc = sccMetrics fs settings.RepositoryFolder settings.SccFile
+            let loc = Loc.fetchMetrics fs
+            let metrics : FetchCodeMetrics = Metrics.fetchMetricsOr scc loc
+            let inspectFile : InspectFile = Inspect.withMetricsAndHistory metrics (repository.GetFileHistory)
+            
+            printRecommendations inspectFile repository |> ignore
+            0
+        recommendf cmd.FileSystem cmd.CodeRepository cmd.Settings

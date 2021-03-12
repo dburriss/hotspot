@@ -9,15 +9,15 @@ This executes the default command which is **recommend**. It is the equivalent o
 
 Note: `console` is also the default if no `--output` is provided.
 
--r|--repository-folder <REPOSITORY>
--t|--target-folder <TARGET>
+-r|--repository-directory <REPOSITORY>
 --scc-file <SCC>
 *)
 
 open System
 open Hotspot
-open Hotspot.Helpers
 open Argu
+open Spectre.IO
+open Hotspot.Git
 
 type RecommendArgs =
     | [<AltCommandLine("-r")>] Repository_Directory of repo_dir:string
@@ -41,17 +41,11 @@ type HotSpotCommands =
 
 [<EntryPoint>]
 let main argv =
-    //---------------------------------------------------------------------------------------------------------------
-    // Bootstrapping
-    //---------------------------------------------------------------------------------------------------------------
-    let env = AppEnv()
-
-    let defaultIncludeList = ["cs";"fs";]
-    let defaultIgnoreFile filePath = defaultIncludeList |> List.contains (filePath |> FileSystem.ext) |> not
-    
-    //---------------------------------------------------------------------------------------------------------------
+    let environment = Environment()
+    let fileSystem = FileSystem()
+    //------------------------------------------------------------------------------------------------------------------
     // Commands setup
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     let (|Help|_|) (result : ParseResults<HotSpotCommands>) : unit option =
         if(result.IsUsageRequested) then Some ()
         else None
@@ -62,27 +56,38 @@ let main argv =
         | None -> None
         | Some recommendArgs ->
             let executingFolder = Environment.CurrentDirectory
-            let repositoryFolder = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
+            let repositoryDirString = recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder
+            let repositoryDir = fileSystem.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
+            let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
+            let sccFile = if String.IsNullOrEmpty sccFileString then None else Some (fileSystem.File.Retrieve(FilePath.FromString(sccFileString)))
             Some {
-               RepositoryFolder = repositoryFolder
-               TargetFolder = repositoryFolder//recommendArgs.TryGetResult RecommendArgs.Target_Directory |> Option.defaultValue (recommendArgs.TryGetResult RecommendArgs.Repository_Directory |> Option.defaultValue executingFolder)
-               SccFile = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
+               RepositoryFolder = repositoryDir
+               SccFile = sccFile
             }
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     // Execute
-    //---------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
     let parser = ArgumentParser.Create<HotSpotCommands>(programName = "[dotnet] hotspot")
     try
         let result = parser.ParseCommandLine(inputs = argv, raiseOnUsage = false)
         match result with
         | RecommendCommand settings ->
-            RecommendCommand.recommendf env settings
+            let root = settings.RepositoryFolder.Path
+            let shouldIgnore = Live.ignoreAllBut None
+            let recommendationsCmd = {
+                FileSystem = fileSystem;
+                CodeRepository = GitCodeRepository(fileSystem, root, shouldIgnore, Git());
+                Settings = settings
+            }
+            RecommendUsecase.recommend recommendationsCmd
             |> ignore
         | _ ->
             parser.PrintUsage() |> TerminalPrint.text
         
         0
     with e ->
+        sprintf "ERROR in %s" e.TargetSite.Name |> TerminalPrint.severe
+        printfn ""
         sprintf "%s" e.Message |> TerminalPrint.severe
         printfn ""
         parser.PrintUsage() |> TerminalPrint.text

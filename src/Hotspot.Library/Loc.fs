@@ -1,5 +1,7 @@
 namespace Hotspot
 
+open Spectre.IO
+
 module Loc =
     
     open System
@@ -12,9 +14,10 @@ module Loc =
         CommentLines : int
     }
 
-    type LineType = | Comment | Code | Empty
+    type private LineType = | Comment | Code | Empty
 
-    let inspectLine (line : string) = 
+    // TODO: 08/12/2020 dburriss@xebia.com | Could count here and do in single pass
+    let private inspectLine (line : string) = 
         let mutable t = Empty
         let mutable prevWasSlash = false
         for c in line do
@@ -24,15 +27,33 @@ module Loc =
                 if prevWasSlash then 
                     t <- Comment
                 else prevWasSlash <- true
-            else t <- Code
+            else
+                prevWasSlash <- false
+                if t = Empty then
+                    t <- Code
         t
 
 
-    let getStats env filePath =
-        let lineTypes = FileSystem.fileLineMap env inspectLine filePath |> Seq.toList
-        {
-            Ext = FileSystem.ext filePath
-            Lines = lineTypes |> List.length
-            LoC = lineTypes |> List.filter (fun x -> x = Code) |> List.length
-            CommentLines = lineTypes |> List.filter (fun x -> x = Comment) |> List.length
-        }
+    let getLoc (fileSystem : IFileSystem) (file : IFile) =
+        if file.Exists then
+            let lineTypes = FileSystem.fileLineMap fileSystem inspectLine file |> Seq.toList
+            Some {
+                Ext = file.Path.GetExtension()
+                Lines = lineTypes |> List.length
+                LoC = lineTypes |> List.filter (fun x -> x = Code) |> List.length
+                CommentLines = lineTypes |> List.filter (fun x -> x = Comment) |> List.length
+            }
+        else None
+        
+    let fetchMetrics (fileSystem : IFileSystem) : FetchCodeMetrics =
+        fun file ->
+            getLoc fileSystem file
+            |> function
+                | Some stats ->
+                    Some {
+                        LoC = Some stats.LoC
+                        CyclomaticComplexity = None
+                        InheritanceDepth = None
+                        Coupling = None
+                    }
+                | None -> None

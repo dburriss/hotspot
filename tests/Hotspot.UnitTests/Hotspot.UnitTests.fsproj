@@ -6,9 +6,18 @@
         <GenerateProgramFile>false</GenerateProgramFile>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="SCCTests.fs" />
+        <Compile Include="A.fs" />
         <Compile Include="ClamTests.fs" />
+        <Compile Include="GitTests.fs" />
+        <Compile Include="GitCodeRepositoryTests.fs" />
+        <Compile Include="IgnoreFileTests.fs" />
+        <Compile Include="SCCTests.fs" />
+        <Compile Include="LocTests.fs" />
+        <Compile Include="MetricsTests.fs" />
+        <Compile Include="InspectorTests.fs" />
+        <Compile Include="AnalyzerTests.fs" />
         <Compile Include="Program.fs" />
+        <Content Include="paket.references" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\Hotspot.Library\Hotspot.Library.fsproj" />

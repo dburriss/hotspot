@@ -1,13 +1,10 @@
 namespace Hotspot.Git
-
-open System.Diagnostics
-open System.IO
-
 module GitCommand =
-    
-    open System.Diagnostics
+
     open System
     open Hotspot.Helpers
+    open System.Diagnostics
+    open System.IO
     
     let private (|Windows|Linux|OSX|) osNameAndVersion =
         let osv = String.lower osNameAndVersion
@@ -15,62 +12,56 @@ module GitCommand =
         elif osv.Contains("nix") then Linux
         elif String.containsAnyOf ["darwin"] osv then OSX
         else failwithf "Unknown OS found when trying to find git bin: %s" osNameAndVersion
-        
-    let mutable git_bin : string Option = None
     
-    let private gitBin() =
-        match git_bin with
-        | None ->
-            let p = Environment.GetEnvironmentVariable("HOTSPOT_GIT_EXECUTABLE")
-            Debug.WriteLineIf(String.isNotEmpty(p), sprintf "HOTSPOT_GIT_EXECUTABLE set to %s" p)
-            let os = System.Runtime.InteropServices.RuntimeInformation.OSDescription
-            let gitLocation =
-                if String.isNotEmpty(p) then
-                    p
-                else
-                    // TODO: 01/12/2020 dburriss@xebia.com | This needs to be fleshed out or not supported at all.. prob check existence of a few places then panic with instructions to set HOTSPOT_GIT_EXECUTABLE
-                    match os with
-                    | Windows ->
-                        Debug.WriteLine("GitCommand: Detecting git on Windows...")
-                        ["C:/Program Files/Git/mingw64/libexec/git-core/git.exe"] |> List.tryFind File.Exists |> Option.defaultValue ""
-                    | Linux ->
-                        Debug.WriteLine("GitCommand: Detecting git on Linux...")
-                        ["/usr/bin/git"; "/usr/local/bin/git"; "/usr/lib/git-core/git"] |> List.tryFind File.Exists |> Option.defaultValue ""
-                    | OSX ->
-                        Debug.WriteLine("GitCommand: Detecting git on OSX...")
-                        ["/usr/local/bin/git"; "/usr/bin/git"] |> List.tryFind File.Exists |> Option.defaultValue ""
-            
-            if String.isEmpty(gitLocation) then
-                Debug.WriteLine("No git binary was found.")
-                failwithf "No git binary was found for for the OS %s. %sConsider setting environment variable HOTSPOT_GIT_EXECUTABLE pointing to the `git` binary." os Environment.NewLine
-            else Debug.WriteLine(sprintf "GitCommand: Using git binary found at %s" gitLocation)
-            git_bin <- Some gitLocation
-            gitLocation
-        | Some gb -> gb
+    let findGitBinary defaultPath =
+        Debug.WriteLineIf(String.isNotEmpty(defaultPath), sprintf "HOTSPOT_GIT_EXECUTABLE set to %s" defaultPath)
+        let os = System.Runtime.InteropServices.RuntimeInformation.OSDescription
+        let gitLocation =
+            if String.isNotEmpty(defaultPath) then
+                if File.Exists(defaultPath) then defaultPath
+                else failwithf "Did not find git binary at %s as expected." defaultPath 
+            else
+                // TODO: 01/12/2020 dburriss@xebia.com | This needs to be fleshed out or not supported at all.. prob check existence of a few places then panic with instructions to set HOTSPOT_GIT_EXECUTABLE
+                match os with
+                | Windows ->
+                    Debug.WriteLine("GitCommand: Detecting git on Windows...")
+                    ["C:/Program Files/Git/mingw64/libexec/git-core/git.exe"] |> List.tryFind File.Exists |> Option.defaultValue ""
+                | Linux ->
+                    Debug.WriteLine("GitCommand: Detecting git on Linux...")
+                    ["/usr/bin/git"; "/usr/local/bin/git"; "/usr/lib/git-core/git"] |> List.tryFind File.Exists |> Option.defaultValue ""
+                | OSX ->
+                    Debug.WriteLine("GitCommand: Detecting git on OSX...")
+                    ["/usr/local/bin/git"; "/usr/bin/git"] |> List.tryFind File.Exists |> Option.defaultValue ""
         
-        
-    // TODO: 01/12/2020 dburriss@xebia.com | Make this use IFileSystem? Maybe not... just make `run` replaceable.
-    let run repository command =
-        //printfn "RUNNING: 'git %s'" command 
+        if String.isEmpty(gitLocation) then
+            Debug.WriteLine("No git binary was found.")
+            failwithf "No git binary was found for for the OS %s. %sConsider setting environment variable HOTSPOT_GIT_EXECUTABLE pointing to the `git` binary." os Environment.NewLine
+        else Debug.WriteLine(sprintf "GitCommand: Using git binary found at %s" gitLocation)
+        gitLocation
+    
+    let run gitBinary repositoryRoot command =
+        //printfn "RUNNING: 'git %s'" command
+        Debug.WriteLine(sprintf "RUNNING GIT COMMAND: %s" command)
         let info = ProcessStartInfo()
-        info.WorkingDirectory <- repository//must be full path not using ~/
-        info.FileName <- gitBin()
+        info.WorkingDirectory <- repositoryRoot//must be full path not using ~/
+        info.FileName <- gitBinary
         info.Arguments <- command
         info.UseShellExecute <- false
         info.RedirectStandardOutput <- true
         info.RedirectStandardError <- true
         let p = Process.Start(info)
 
-        let output = p.StandardOutput.ReadToEnd()
+        let output =
+            [|
+                while not p.StandardOutput.EndOfStream do
+                    let o = p.StandardOutput.ReadLine()
+                    if String.isNotEmpty o then o
+           |]
+            
         let err = p.StandardError.ReadToEnd()
         p.WaitForExit()
         if String.IsNullOrEmpty(err) then
-            if String.IsNullOrWhiteSpace(output) then
-                None |> Ok
-            else output |> Some |> Ok
-        else Error (sprintf "ERROR running 'git %s' %s %s" command Environment.NewLine err)
-        
-    let logOfFileCmd file = sprintf "log --format=format:\"%%h,%%ae,%%aI\" \"%s\"" file
-    let logOfHashCmd hash = sprintf "log -1 --format=format:\"%%h,%%ae,%%aI\" %s" (String.trim hash)
-    let isInGitRepo = "rev-parse --is-inside-work-tree" // true/false
+            output
+        else failwithf "ERROR running 'git %s' %s %s" command (Environment.NewLine) err
+
     
