@@ -1,0 +1,253 @@
+<html class="js csstransforms3d">
+  <head>
+    <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Hotspot | RecommendSetting
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="https://devonburriss.me/hotspot/static/images/favicon.png"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/nucleus.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/fontawesome-all.min.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/hybrid.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/featherlight.min.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/perfect-scrollbar.min.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/auto-complete.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/atom-one-dark-reasonable.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/theme.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/tips.css"/>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.0/styles/atom-one-dark.min.css"/>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/css/theme-red.css"/>
+    <script src="https://devonburriss.me/hotspot/static/js/jquery-3.3.1.min.js"></script>
+  </head>
+  <body>
+    <nav id="sidebar">
+      <div id="header-wrapper">
+        <div id="header">
+          <h2 id="logo">
+            Hotspot
+          </h2>
+        </div>
+        <div class="searchbox">
+          <label for="search-by">
+            <i class="fas fa-search"></i>
+          </label>
+          <input data-search-input="" id="search-by" type="search" placeholder="Search..."/>
+          <span data-search-clear="">
+            <i class="fas fa-times"></i>
+          </span>
+        </div>
+        <script type="text/javascript" src="https://devonburriss.me/hotspot/static/js/lunr.min.js"></script>
+        <script type="text/javascript" src="https://devonburriss.me/hotspot/static/js/auto-complete.js"></script>
+        <script type="text/javascript">
+          var baseurl ='https://devonburriss.me/hotspot'
+        </script>
+        <script type="text/javascript" src="https://devonburriss.me/hotspot/static/js/search.js"></script>
+      </div>
+      <div class="highlightable">
+        <ul class="topics">
+          <li id="menu-explanations" class="dd-item menu-group-link">
+            <a>
+              Explanation
+            </a>
+          </li>
+          <li id="menu-tutorials" class="dd-item menu-group-link">
+            <a>
+              Tutorials
+            </a>
+          </li>
+          <li id="menu-howtos" class="dd-item menu-group-link">
+            <a>
+              How-To Guides
+            </a>
+          </li>
+          <li id="menu-refs" class="dd-item menu-group-link menu-group-link-active">
+            <a>
+              API References
+            </a>
+          </li>
+        </ul>
+        <ul id="submenu-explanations" class="submenu">
+          <li>
+            <a href="https://devonburriss.me/hotspot/explanations/overview.html" class="padding">
+              Hotspot Overview
+            </a>
+          </li>
+          <li>
+            <a href="https://devonburriss.me/hotspot/explanations/limitations.html" class="padding">
+              Limitations
+            </a>
+          </li>
+        </ul>
+        <ul id="submenu-tutorials" class="submenu">
+          <li>
+            <a href="https://devonburriss.me/hotspot/tutorials/how-to-start.html" class="padding">
+              Getting started
+            </a>
+          </li>
+          <li>
+            <a href="https://devonburriss.me/hotspot/tutorials/some-post.html" class="padding">
+              Some Post
+            </a>
+          </li>
+        </ul>
+        <ul id="submenu-howtos" class="submenu">
+          <li>
+            <a href="https://devonburriss.me/hotspot/how-tos/somePostWithCode.html" class="padding">
+              Some post with Code
+            </a>
+          </li>
+          <li>
+            <a href="https://devonburriss.me/hotspot/how-tos/development.html" class="padding">
+              Development
+            </a>
+          </li>
+          <li>
+            <a href="https://devonburriss.me/hotspot/how-tos/diagrams.html" class="padding">
+              Diagrams
+            </a>
+          </li>
+        </ul>
+        <ul id="submenu-refs" class="submenu submenu-active">
+          <li>
+            <a href="https://devonburriss.me/hotspot/reference/Hotspot/index.html" class="padding">
+              Hotspot
+            </a>
+          </li>
+        </ul>
+        <section id="shortcuts">
+          <h3>
+            Shortucts
+          </h3>
+          <ul>
+            <li>
+              <a class="padding" href="/">
+                <i class="fas fa-home"></i>
+                Home
+              </a>
+            </li>
+            <li>
+              <a class="padding" href="https://devonburriss.me/hotspot/">
+                <i class="fab fa-github"></i>
+                GitHub repo
+              </a>
+            </li>
+          </ul>
+        </section>
+        <section id="footer">
+          <p>Built with <a href="https://github.com/ionide/Fornax">Fornax</a>
+        </section>
+      </div>
+    </nav>
+    <section id="body">
+      <div id="overlay"></div>
+      <div class="padding highlightable">
+        <div id="body-inner">
+          <span id="sidebar-toggle-span">
+            <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+              <i class="fas fa-bars"></i>
+               navigation
+            </a>
+          </span>
+          <div class="api-page">
+            <h2>
+              RecommendSetting
+            </h2>
+            <b>
+              Namespace: 
+            </b>
+            <a href="Hotspot.html">
+              Hotspot
+            </a>
+            <br/>
+            <b>
+              Parent: 
+            </b>
+            <a href="Hotspot.html">
+              Hotspot
+            </a>
+            <span>
+              
+
+            </span>
+            <br/>
+            <table>
+              <tr>
+                <th width="35%">
+                  Name
+                </th>
+                <th width="65%">
+                  Description
+                </th>
+              </tr>
+              <tr>
+                <td colSpan="3">
+                  <b>
+                    Record Fields
+                  </b>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>
+                    RepositoryFolder
+                  </code>
+                  <br/>
+                  <br/>
+                  <b>
+                    Signature: 
+                  </b>
+                  IDirectory
+                  <br/>
+                </td>
+                <td>
+                  
+
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>
+                    SccFile
+                  </code>
+                  <br/>
+                  <br/>
+                  <b>
+                    Signature: 
+                  </b>
+                  IFile option
+                  <br/>
+                </td>
+                <td>
+                  
+
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="https://devonburriss.me/hotspot/static/js/clipboard.min.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/perfect-scrollbar.min.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/jquery.sticky.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/featherlight.min.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/modernizr.custom-3.6.0.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/learn.js"></script>
+    <script src="https://devonburriss.me/hotspot/static/js/hugo-learn.js"></script>
+    <link rel="stylesheet" href="https://devonburriss.me/hotspot/static/mermaid/mermaid.css"/>
+    <script src="https://devonburriss.me/hotspot/static/mermaid/mermaid.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.0/languages/fsharp.min.js"></script>
+    <script>
+      hljs.initHighlightingOnLoad()
+    </script>
+    <script src="https://devonburriss.me/hotspot/static/js/tips.js"></script>
+  </body>
+</html>
