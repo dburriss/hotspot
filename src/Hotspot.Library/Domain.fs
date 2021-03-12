@@ -5,6 +5,9 @@ open Spectre.IO
 //----------------------------------------------------------------------------------------------------------------------
 // TYPES
 //----------------------------------------------------------------------------------------------------------------------
+/// A date range with a start and an end
+type DateRange = (DateTimeOffset * DateTimeOffset)
+
 /// A function that determines if a file should be ignored
 type IgnoreFile = IFile -> bool
 
@@ -137,12 +140,30 @@ module History =
         history |> Array.map (fun x -> x.Date) |> Array.sort |> Array.tryLast
         
 module Analysis =
-    let calcPriorityFromHistory calculateCoeffiecient (createdAt, lastUpdatedAt) (data : InspectedFile) =
-        let calcCoeff = calculateCoeffiecient createdAt lastUpdatedAt
+    //
+    let calcPriorityFromHistory calcTimeCoefficient (data : InspectedFile) =
+        //weightings
+        let locWeight = 0.14
+        let complexityWeight = 0.36
+        let inheritanceWeight = 0.26
+        let couplingWeight = 0.24
+        
+        let locValue = function
+            | None -> 1L
+            | Some x when x < 30 -> 1L
+            | Some x -> (float x * locWeight) |> int64
+            
+        let complexityValue = function
+            | None -> 1L
+            | Some x when x < 2 -> 1L
+            | Some x -> (float x * complexityWeight) |> int64
+        
         let multiplierNumber =
             match (data.Metrics) with
             | None -> 1L
-            | Some m -> m.CyclomaticComplexity |> Option.defaultWith (fun () -> m.LoC |> Option.defaultValue 1) |> int64
+            | Some m ->
+                //m.CyclomaticComplexity |> Option.defaultWith (fun () -> m.LoC |> locValue) |> int64
+                (complexityValue m.CyclomaticComplexity) * (locValue m.LoC)
             
         let multiplier coeff = coeff * multiplierNumber
         let touchScores =
@@ -150,7 +171,7 @@ module Analysis =
             | None | Some [||] -> multiplierNumber
             | Some history ->
                 history
-                |> (Array.map (fun log -> log.Date |> calcCoeff))
+                |> (Array.map (fun log -> log.Date |> calcTimeCoefficient))
                 |> (Array.sumBy multiplier)
         touchScores    
 

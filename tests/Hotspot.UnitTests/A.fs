@@ -23,8 +23,8 @@ type FakeCodeRepository(shouldIgnore) =
     let env = FakeEnvironment.CreateUnixEnvironment()
     let fileSystem = FakeFileSystem(env)
     let mutable isGit = false
-    let mutable createdAt = DateTimeOffset.UtcNow
-    let mutable updatedAt = DateTimeOffset.UtcNow
+    let mutable createdAt = DateTimeOffset.Parse("2021/03/25")
+    let mutable updatedAt = DateTimeOffset.Parse("2021/03/25")
     let mutable rootPath = DirectoryPath "/"
     do fileSystem.CreateDirectory(rootPath) |> ignore
     let history = Dictionary<string, History>()
@@ -63,8 +63,8 @@ type FakeCodeRepository(shouldIgnore) =
     type InspectedFileBuilder(name) =
         let mutable _loc = None
         let mutable _complexity = None
-        let mutable createdAt = DateTimeOffset.UtcNow
-        let mutable lastTouchedAt = DateTimeOffset.UtcNow
+        let mutable createdAt = DateTimeOffset.Parse("2021/03/25")
+        let mutable lastTouchedAt = DateTimeOffset.Parse("2021/03/25")
         member this.WithLoc(loc) =
             _loc <- Some loc
             this
@@ -96,9 +96,9 @@ module A =
         fun file -> InspectedFileBuilder(file.Path.FullPath).Build() |> Some
     
     module Date =
+        let aDate = DateTimeOffset.Parse("2021/03/25")
         let aDay = TimeSpan.FromHours 24.0
-        let ofYesterday = DateTimeOffset.UtcNow - aDay
-        let today = DateTimeOffset.UtcNow
+        let theDayBefore = aDate - aDay
         
     module InspectedRepositoryCode =
         let withFiles (files : InspectedFile list) =
@@ -106,10 +106,10 @@ module A =
                 fun dt (file : InspectedFile)  ->
                     if (map file) < dt then (map file)
                     else dt
-            let mapCreated (f : InspectedFile) = (f.CreatedAt |> Option.defaultValue (Date.today))
-            let mapUpdated (f : InspectedFile) = (f.LastTouchedAt |> Option.defaultValue (Date.today))
-            let createdAt = files |> List.fold (folderM mapCreated) (Date.today)
-            let updatedAt = files |> List.fold (folderM mapUpdated) (Date.today)
+            let mapCreated (f : InspectedFile) = (f.CreatedAt |> Option.defaultValue (Date.aDate))
+            let mapUpdated (f : InspectedFile) = (f.LastTouchedAt |> Option.defaultValue (Date.aDate))
+            let createdAt = files |> List.fold (folderM mapCreated) (Date.aDate)
+            let updatedAt = files |> List.fold (folderM mapUpdated) (Date.aDate)
             let inspectedRepositoryCode : InspectedRepositoryCode = {
                 Directory = DirectoryPath "/"
                 CreatedAt = createdAt

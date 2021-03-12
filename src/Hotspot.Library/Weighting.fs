@@ -8,7 +8,7 @@ module Weighting =
 
     // Only meaningful for codebase with consistent work going on.
     // TODO: If the last thing worked on was complex but a long time ago, it would still show up as meaningful.
-    let calculate startDt endDt nowDt =
+    let calculate (startDt, endDt) nowDt =
         // linear but should possibly be exponential
         let now = nowDt |> ticks
         let start = startDt |> ticks

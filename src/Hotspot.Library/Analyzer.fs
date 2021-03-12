@@ -1,7 +1,7 @@
 namespace Hotspot
         
 module Analyzer =
-
+    
     /// Analyze the data using the given `analyze` function
     let private performAnalysisWith analyze (repository : InspectedRepositoryCode) =
         let hasHistory (h : History option) =
@@ -30,13 +30,13 @@ module Analyzer =
             AnalyzedFiles = repository.InspectedFiles |> List.filter filter |> List.map analyze
         }
         
-    let defaultStrategy (repository : InspectedRepositoryCode) =
+    let defaultStrategy (dateRange : DateRange) =
         // TODO: we actually only care about the dates...
-        let priorityCalculator = Analysis.calcPriorityFromHistory (Weighting.calculate) (repository.CreatedAt, repository.LastUpdatedAt)
+        let priorityCalculator = Analysis.calcPriorityFromHistory (Weighting.calculate dateRange)
         Analysis.prioritize priorityCalculator
 
     /// Perform analysis on the `InspectedRepositoryCode` using `Analysis.calcPriorityFromHistory`.
     /// If a file contains no metrics or history, no analysis is given for file.
     let analyze (repository : InspectedRepositoryCode) =
-        performAnalysisWith (defaultStrategy repository) repository
+        performAnalysisWith (defaultStrategy (repository.CreatedAt, repository.LastUpdatedAt)) repository
         

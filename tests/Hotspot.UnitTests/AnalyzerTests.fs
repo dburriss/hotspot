@@ -1,5 +1,6 @@
 module AnalyzerTests
 
+open System
 open Hotspot
 open Spectre.IO
 open Spectre.IO.Testing
@@ -10,8 +11,8 @@ open Swensen.Unquote
 let ``analyzing inspected repository has inspectedRepositoryCode dates``() =
     let inspectedRepositoryCode : InspectedRepositoryCode = {
         Directory = DirectoryPath "/"
-        CreatedAt = A.Date.ofYesterday
-        LastUpdatedAt = A.Date.today
+        CreatedAt = A.Date.theDayBefore
+        LastUpdatedAt = A.Date.aDate
         InspectedFiles = []
     }
     
@@ -25,8 +26,8 @@ let ``analyzing inspected repository has inspectedRepositoryCode dates``() =
 let ``analyzing inspected repository with no files results in analyzed repo with no files``() =
     let inspectedRepositoryCode : InspectedRepositoryCode = {
         Directory = DirectoryPath "/"
-        CreatedAt = A.Date.ofYesterday
-        LastUpdatedAt = A.Date.today
+        CreatedAt = A.Date.theDayBefore
+        LastUpdatedAt = A.Date.aDate
         InspectedFiles = []
     }
     
@@ -38,15 +39,15 @@ let ``analyzing inspected repository with no files results in analyzed repo with
 let ``analyzing inspected repository with 1 inspected file with no metrics and no history results in no analysis``() =
     let inspectedFile1 : InspectedFile = {
         File = FilePath "Program.cs"
-        CreatedAt = Some A.Date.today
-        LastTouchedAt = Some A.Date.today
+        CreatedAt = Some A.Date.aDate
+        LastTouchedAt = Some A.Date.aDate
         History = None
         Metrics = None
     } 
     let inspectedRepositoryCode : InspectedRepositoryCode = {
         Directory = DirectoryPath "/"
-        CreatedAt = A.Date.ofYesterday
-        LastUpdatedAt = A.Date.today
+        CreatedAt = A.Date.theDayBefore
+        LastUpdatedAt = A.Date.aDate
         InspectedFiles = [ inspectedFile1 ]
     }
     
@@ -94,3 +95,43 @@ let ``analyzing 2 files the one with higher Cyclomatic Complexity has higher pri
     let dataFileAnalysis = getFile "Data.cs" analyzedRepo
     
     test <@ programFileAnalysis.PriorityScore < dataFileAnalysis.PriorityScore @>
+    
+[<Fact>]
+let ``default analyzer gives priority to higher complexity all else being equal``() =
+    let defaultValue = 10
+    let HIGH_VALUE = 100
+    let inspectedFile1 = InspectedFileBuilder("Program.cs").WithLoc(defaultValue).WithComplexity(defaultValue).Build()
+    let inspectedFile2 = InspectedFileBuilder("Data.cs").WithLoc(defaultValue).WithComplexity(HIGH_VALUE).Build()
+    let analyze = Analyzer.defaultStrategy (DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+    
+    let analyzedFile1 = analyze inspectedFile1
+    let analyzedFile2 = analyze inspectedFile2
+
+    test <@ analyzedFile1.PriorityScore < analyzedFile2.PriorityScore @>
+    
+[<Fact>]
+let ``default analyzer gives priority to higher LoC all else being equal``() =
+    let defaultValue = 10
+    let HIGH_VALUE = 1000
+    let inspectedFile1 = InspectedFileBuilder("Program.cs").WithLoc(defaultValue).WithComplexity(defaultValue).Build()
+    let inspectedFile2 = InspectedFileBuilder("Data.cs").WithLoc(HIGH_VALUE).WithComplexity(defaultValue).Build()
+    let analyze = Analyzer.defaultStrategy (DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+    
+    let analyzedFile1 = analyze inspectedFile1
+    let analyzedFile2 = analyze inspectedFile2
+
+    test <@ analyzedFile1.PriorityScore < analyzedFile2.PriorityScore @>
+    
+[<Fact>]
+let ``default analyzer requires 3 times higher LoC to overcome 1 complexity point``() =
+    let defaultValue = 10
+    let higherComplexity = defaultValue + 1
+    let higherLoc = defaultValue * 3
+    let inspectedFile1 = InspectedFileBuilder("Program.cs").WithLoc(defaultValue).WithComplexity(higherComplexity).Build()
+    let inspectedFile2 = InspectedFileBuilder("Data.cs").WithLoc(higherLoc).WithComplexity(defaultValue).Build()
+    let analyze = Analyzer.defaultStrategy (DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+    
+    let analyzedFile1 = analyze inspectedFile1
+    let analyzedFile2 = analyze inspectedFile2
+
+    test <@ analyzedFile1.PriorityScore < analyzedFile2.PriorityScore @>
