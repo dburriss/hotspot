@@ -7,6 +7,8 @@ open Spectre.IO
 type RecommendSetting = {
     RepositoryFolder : IDirectory
     SccFile : IFile option
+    IncludeGlob : string
+    ExcludeGlobs : string array
 }
 
 type RecommendationsCmd = {
@@ -39,9 +41,10 @@ module RecommendUsecase =
             let repositoryFolder = settings.RepositoryFolder.Path.FullPath
             
             sprintf "REPOSITORY: %s" repositoryFolder |> TerminalPrint.highlight
-            
-            Debug.WriteLine("Metric source: SCC")
-            sprintf "Metric source: SCC" |> TerminalPrint.subdued
+            if (Option.isSome settings.SccFile) then
+                Debug.WriteLine("Metric source: SCC")
+                sprintf "Metric source: SCC" |> TerminalPrint.subdued
+                
             let scc = sccMetrics fs settings.RepositoryFolder settings.SccFile
             let loc = Loc.fetchMetrics fs
             let metrics : FetchCodeMetrics = Metrics.fetchMetricsOr scc loc

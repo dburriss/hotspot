@@ -18,31 +18,42 @@ open Hotspot
 open Argu
 open Spectre.IO
 open Hotspot.Git
+open Hotspot.Helpers
 
 type RecommendArgs =
     | [<AltCommandLine("-r")>] Repository_Directory of repo_dir:string
-    //| [<AltCommandLine("-t")>] Target_Directory of target_dir:string
+    | [<AltCommandLine("-i")>] Include of string
+    | [<AltCommandLine("-e")>] Excludes of string
     | Scc_File of scc_file_path:string
 
     interface IArgParserTemplate with
         member s.Usage =
             match s with
             | Repository_Directory _ -> "The root of the git repository. Default: Execution directory"
-            //| Target_Directory _ -> "The directory to run analysis on. Default: <repo_dir>"
+            | Include _ -> "Include glob to test files against."
+            | Excludes _ -> "Comma delimited glob to exclude files. By default ignores .dll and .so files."
             | Scc_File _ -> "The JSON file output of running SCC (example `scc --by-file --format json > scc_out.json`)"
             
 type HotSpotCommands =
     | [<CliPrefix(CliPrefix.None)>] Recommend of ParseResults<RecommendArgs>
+    
     interface IArgParserTemplate with
         member this.Usage =
             match this with
             | Recommend _ -> "Generates recommendations of code hotspots."
-
+            
 
 [<EntryPoint>]
 let main argv =
     let environment = Environment()
     let fileSystem = FileSystem()
+    let getIncludeGlob (result : ParseResults<RecommendArgs>) : string =
+        result.GetResult(RecommendArgs.Include, defaultValue = "*")//"./**.?s?"
+    let getExcludeGlobs (result : ParseResults<RecommendArgs>) : string array =
+        match result.TryGetResult(RecommendArgs.Excludes) with
+        | None -> IgnoreFile.defaultIgnoreGlobs
+        | Some exStr -> String.split [|","|] exStr
+
     //------------------------------------------------------------------------------------------------------------------
     // Commands setup
     //------------------------------------------------------------------------------------------------------------------
@@ -60,9 +71,12 @@ let main argv =
             let repositoryDir = fileSystem.Directory.Retrieve(DirectoryPath.FromString(repositoryDirString))
             let sccFileString = recommendArgs.TryGetResult RecommendArgs.Scc_File |> Option.defaultValue ""
             let sccFile = if String.IsNullOrEmpty sccFileString then None else Some (fileSystem.File.Retrieve(FilePath.FromString(sccFileString)))
+            let excludes = getExcludeGlobs recommendArgs
             Some {
                RepositoryFolder = repositoryDir
                SccFile = sccFile
+               IncludeGlob = getIncludeGlob recommendArgs
+               ExcludeGlobs = excludes
             }
     //------------------------------------------------------------------------------------------------------------------
     // Execute
@@ -73,10 +87,10 @@ let main argv =
         match result with
         | RecommendCommand settings ->
             let root = settings.RepositoryFolder.Path
-            let shouldIgnore = Live.ignoreAllBut None
+            let shouldIgnore = IgnoreFile.init settings.ExcludeGlobs
             let recommendationsCmd = {
                 FileSystem = fileSystem;
-                CodeRepository = GitCodeRepository(fileSystem, root, shouldIgnore, Git());
+                CodeRepository = GitCodeRepository(fileSystem, root, settings.IncludeGlob, shouldIgnore, Git());
                 Settings = settings
             }
             RecommendUsecase.recommend recommendationsCmd

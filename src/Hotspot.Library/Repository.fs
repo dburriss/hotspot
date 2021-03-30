@@ -16,10 +16,14 @@ type NoGitRepository(fileSystem : IFileSystem, rootPath : DirectoryPath) =
     
 type GitCodeRepository( fileSystem : IFileSystem,
                         rootPath : DirectoryPath,
+                        includeGlob : string,
                         shouldIgnore : IgnoreFile,
                         git : Git) =
     let isGit = git.IsGitRepository(rootPath.FullPath)// should always be true
     let (createdAt, updatedAt) = git.RepositoryDateRange(rootPath.FullPath)
+    
+    let useGlobbingFlag = false   
+    
     interface CodeRepository with
         member val RootDirectory = fileSystem.GetDirectory(rootPath) with get
         member this.HasHistory() = isGit
@@ -35,11 +39,20 @@ type GitCodeRepository( fileSystem : IFileSystem,
                             )
                     |> Array.choose id
                 
-            
+         
         member this.Choose f =
             let map = fun file ->
                 //printfn "MAP FILE: %s" filePath
                 if shouldIgnore file then file, None
                 else file, (f file)
-            FileSystem.mapFiles fileSystem map (this :> CodeRepository).RootDirectory
-            |> Seq.choose snd
+                
+            if useGlobbingFlag then
+                let root = (this :> CodeRepository).RootDirectory
+                let files = root.GetFiles(includeGlob, SearchScope.Recursive)
+                files
+                |> Seq.choose (map >> snd)
+            else
+                FileSystem.mapFiles includeGlob fileSystem map (this :> CodeRepository).RootDirectory
+                |> Seq.choose snd
+                
+            

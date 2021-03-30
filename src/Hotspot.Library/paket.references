@@ -5,3 +5,4 @@ Spectre.Console
 Microsoft.Extensions.Logging
 Microsoft.Extensions.Logging.Console
 Microsoft.Extensions.Logging.EventLog
+DotNet.Glob

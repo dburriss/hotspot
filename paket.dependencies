@@ -20,6 +20,7 @@ nuget Microsoft.Extensions.Logging.Console
 nuget Microsoft.Extensions.Logging.EventLog
 nuget Argu
 nuget Spectre.IO.Testing
+nuget DotNet.Glob
 
 group Docs
   source https://api.nuget.org/v3/index.json

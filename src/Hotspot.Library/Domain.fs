@@ -1,6 +1,7 @@
 namespace Hotspot
 
 open System
+open Hotspot
 open Spectre.IO
 //----------------------------------------------------------------------------------------------------------------------
 // TYPES
@@ -110,14 +111,33 @@ type AnalyzeRepository = InspectedRepositoryCode -> AnalyzedRepositoryCode
 
 type MakeRecommendations = AnalyzedRepositoryCode -> RecommendationReport
 
-//----------------------------------------------------------------------------------------------------------------------
-// WORKFLOWS: Shared workflows built up from steps
-//----------------------------------------------------------------------------------------------------------------------
+module IgnoreFile =
     
-//----------------------------------------------------------------------------------------------------------------------
-// USE-CASES
-//----------------------------------------------------------------------------------------------------------------------
-       
+    open DotNet.Globbing
+    open System.Diagnostics
+    
+    GlobOptions.Default.Evaluation.CaseInsensitive <- true
+    let defaultIgnoreGlobs = [| "**/.*/**"; "**/packages/**"; "**/*.dll"; "**/*.so"; "**/*.json"; "**/*.pdb"; "**/*.xml"; "**/*.yaml"; "**/*.yml"; "**/*.lock"; |]
+    let private isMatch globs (str : string) =
+        let len = Array.length globs
+        if len = 0 then
+            false
+        else
+            let mutable m = false
+            let mutable i = 0
+            while not m && i < len do
+                m <- Glob.Parse(globs.[i]).IsMatch(str)
+                i <- i+1
+            m
+    let init (ignoreGlobs : string array) : IgnoreFile =
+        
+        Debug.WriteLine(sprintf "IgnoreFile: Using custom ignore globs %A" (ignoreGlobs |> string))
+            
+        fun file ->
+                let ignore = isMatch ignoreGlobs file.Path.FullPath
+                if ignore then Debug.WriteLine(sprintf "IgnoreFile: ignoring %s? %b" file.Path.FullPath ignore)
+                ignore
+                
 module CodeMetrics =
     // LoC
     let hasLoC (metricsOpt : CodeMetrics option) =
@@ -184,12 +204,12 @@ module Analysis =
         }
     
 // TODO: 07/12/2020 dburriss@xebia.com | Move this to a Live module
-module Live =
-
-    let ignoreAllBut exts : IgnoreFile =
-        let defaultIncludeList = defaultArg exts [|".cs";".fs";".ts"|]
-        let defaultIgnoreFile (file : IFile) =
-            let ext = file.Path.GetExtension()
-            let r = defaultIncludeList |> Array.contains ext |> not
-            r
-        defaultIgnoreFile
+//module Live =
+//
+//    let ignoreAllBut exts : IgnoreFile =
+//        let defaultIncludeList = defaultArg exts [|".cs";".fs";".ts"|]
+//        let defaultIgnoreFile (file : IFile) =
+//            let ext = file.Path.GetExtension()
+//            let r = defaultIncludeList |> Array.contains ext |> not
+//            r
+//        defaultIgnoreFile

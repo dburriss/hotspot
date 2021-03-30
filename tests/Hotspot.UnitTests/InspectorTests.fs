@@ -8,7 +8,7 @@ open Spectre.IO
 
 [<Fact>]
 let ``inspect empty code repository returns no inspected files``() =
-    let shouldIgnore = Live.ignoreAllBut None
+    let shouldIgnore = IgnoreFile.init Array.empty
     let fakeRepo = FakeCodeRepository(shouldIgnore)
     let fileInspector = A.emptyFileInspector
     

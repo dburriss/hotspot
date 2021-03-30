@@ -13,10 +13,10 @@ module FileSystem =
             fs.GetDirectory(directory.Path).GetDirectories("*", SearchScope.Current) |> Seq.toArray
         else failwithf "FileSystem: Failed trying to find directories in %s, as the directory it does not exist." (directory.ToString())
         
-    let private getFiles (fs : IFileSystem) (directory : IDirectory) =
+    let private getFiles glob (fs : IFileSystem) (directory : IDirectory)  =
         //IO.Directory.GetFiles(path)
         if fs.Exist(directory.Path) then
-            fs.GetDirectory(directory.Path).GetFiles("*", SearchScope.Current) |> Seq.toArray
+            fs.GetDirectory(directory.Path).GetFiles(glob, SearchScope.Current) |> Seq.toArray
         else failwithf "FileSystem: Failed trying to find files in %s, as the directory it does not exist." (directory.ToString())
     
     let private getFileLines (file : IFile) =
@@ -59,20 +59,20 @@ module FileSystem =
     let fileLineMap (fs : IFileSystem)
         f filePath = filePath |> readLines fs |> Seq.map f
     
-    let rec mapFiles<'a> (fs : IFileSystem) (f : IFile -> 'a) (path : IDirectory) =
+    let rec mapFiles<'a> glob (fs : IFileSystem) (f : IFile -> 'a) (path : IDirectory) =
         let dirs = path |> (getDirs fs)
-        let files = path |> (getFiles fs)
+        let files = path |> (getFiles glob fs)
         seq {
             yield! (files |> Seq.map f)
-            yield! (Seq.collect (mapFiles fs f) dirs)
+            yield! (Seq.collect (mapFiles glob fs f) dirs)
         }
         
-    let rec mapFiles2 (fs : IFileSystem) (f : (IFile) -> 'a) (directory : IDirectory) =
+    let rec mapFiles2 glob (fs : IFileSystem) (f : (IFile) -> 'a) (directory : IDirectory) =
         let dirs = directory |> getDirs fs
-        let files = directory |> getFiles fs
+        let files = directory |> getFiles glob fs
         seq {
             yield! (files |> Seq.map f)
-            yield! (Seq.collect (mapFiles2 fs f) dirs)
+            yield! (Seq.collect (mapFiles2 glob fs f) dirs)
         }
     
     // for globbing check
